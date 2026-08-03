@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "n8n-workflow": ["tools/type-stubs/n8n-workflow.d.ts"],
+      "@ibm/mapepire-js": ["tools/type-stubs/mapepire-js.d.ts"]
+    }
+  },
+  "include": [
+    "credentials/**/*.ts",
+    "nodes/**/*.ts",
+    "tools/type-stubs/**/*.d.ts"
+  ]
+}

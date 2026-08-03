@@ -1,0 +1,41 @@
+{
+  "name": "IBM i Mapepire - Select Example",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "When clicking Execute Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "sql": "SELECT CUSTOMER_ID, CUSTOMER_NAME FROM APPDATA.CUSTOMERS WHERE CUSTOMER_ID = ?",
+        "parameters": "[123]",
+        "outputMode": "rows",
+        "includeMetadata": true
+      },
+      "id": "ibmi-select",
+      "name": "IBM i Select",
+      "type": "n8n-nodes-ibmi-mapepire.ibmiMapepire",
+      "typeVersion": 1,
+      "position": [520, 300],
+      "credentials": {
+        "ibmiMapepireApi": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "IBM i Mapepire"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking Execute Workflow": {
+      "main": [[{"node": "IBM i Select", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "00000000-0000-0000-0000-000000000001"
+}

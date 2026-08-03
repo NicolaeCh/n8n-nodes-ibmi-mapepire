@@ -1,0 +1,31 @@
+name: Bug report
+description: Report a reproducible problem without secrets or production data
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: textarea
+    attributes:
+      label: Description
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: n8n version
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Node package version
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Mapepire client/server version
+  - type: textarea
+    attributes:
+      label: Reproduction steps
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: "Do not include passwords, certificates, hostnames, customer data, or sensitive SQL."

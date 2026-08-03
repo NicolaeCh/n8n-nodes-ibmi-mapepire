@@ -1,0 +1,10 @@
+credentials/
+nodes/
+test/
+tools/
+docs/
+examples/
+.github/
+tsconfig*.json
+eslint.config.mjs
+.prettierrc.js

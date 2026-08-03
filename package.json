@@ -1,0 +1,74 @@
+{
+  "name": "n8n-nodes-ibmi-mapepire",
+  "version": "0.1.0",
+  "description": "Secure n8n community node for Db2 for IBM i using the official Mapepire Node.js client",
+  "license": "MIT",
+  "homepage": "https://github.com/NicolaeCh/n8n-nodes-ibmi-mapepire#readme",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "ibm-i",
+    "ibmi",
+    "db2-for-i",
+    "mapepire",
+    "sql"
+  ],
+  "author": {
+    "name": "Nicolae Chirea"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NicolaeCh/n8n-nodes-ibmi-mapepire.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NicolaeCh/n8n-nodes-ibmi-mapepire/issues"
+  },
+  "engines": {
+    "node": ">=20.19.0 <25"
+  },
+  "scripts": {
+    "build": "n8n-node build",
+    "build:watch": "tsc --watch",
+    "dev": "n8n-node dev",
+    "lint": "n8n-node lint",
+    "lint:fix": "n8n-node lint --fix",
+    "test": "npm run test:unit",
+    "verify:types": "tsc -p tsconfig.verify.json --noEmit",
+    "verify:package": "node tools/verify-package.mjs",
+    "verify": "npm run test && npm run verify:types && npm run verify:package",
+    "release": "n8n-node release",
+    "prepublishOnly": "n8n-node prerelease",
+    "build:offline": "rm -rf dist && tsc -p tsconfig.offline-build.json && mkdir -p dist/nodes/IbmiMapepire && cp nodes/IbmiMapepire/ibmi-mapepire.svg dist/nodes/IbmiMapepire/",
+    "pack:offline": "npm run build:offline && npm pack --ignore-scripts",
+    "test:unit": "rm -rf .test-dist && tsc -p tsconfig.test.json && mkdir -p .test-dist/node_modules/@ibm/mapepire-js && cp test/fakes/mapepire-js/index.js .test-dist/node_modules/@ibm/mapepire-js/index.js && node --test test/*.test.cjs"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md",
+    "NOTICE"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "strict": true,
+    "credentials": [
+      "dist/credentials/IbmiMapepireApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/IbmiMapepire/IbmiMapepire.node.js"
+    ]
+  },
+  "dependencies": {
+    "@ibm/mapepire-js": "0.6.1"
+  },
+  "devDependencies": {
+    "@n8n/node-cli": "*",
+    "eslint": "9.39.4",
+    "prettier": "3.8.3",
+    "release-it": "20.2.0",
+    "typescript": "5.9.3"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}

@@ -1,0 +1,14 @@
+declare function setTimeout(handler: (...args: unknown[]) => void, timeout?: number): unknown;
+declare function clearTimeout(handle: unknown): void;
+
+declare module 'node:crypto' {
+  interface Hash {
+    update(data: string): Hash;
+    digest(encoding: 'hex'): string;
+  }
+  export function createHash(algorithm: string): Hash;
+}
+
+declare module 'node:fs' {
+  export function readFileSync(path: string | URL, encoding: 'utf8'): string;
+}

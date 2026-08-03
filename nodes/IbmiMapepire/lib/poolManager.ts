@@ -1,0 +1,112 @@
+import { createHash } from 'node:crypto';
+import { Pool } from '@ibm/mapepire-js';
+import { Semaphore } from './semaphore';
+import type { RuntimeConfig } from './types';
+
+interface ManagedPool {
+	pool: Pool;
+	semaphore: Semaphore;
+}
+
+const pools = new Map<string, Promise<ManagedPool>>();
+
+function poolKey(config: RuntimeConfig): string {
+	const credentials = config.credentials;
+	return createHash('sha256')
+		.update(
+			JSON.stringify({
+				host: credentials.host,
+				port: credentials.port,
+				user: credentials.user,
+				password: credentials.password,
+				ignoreUnauthorized: credentials.ignoreUnauthorized,
+				caCertificate: credentials.caCertificate ?? '',
+				poolSize: credentials.poolSize,
+				jdbcOptions: config.jdbcOptions,
+			}),
+		)
+		.digest('hex');
+}
+
+async function createPool(config: RuntimeConfig, size: number): Promise<Pool> {
+	const credentials = config.credentials;
+	const pool = new Pool({
+		creds: {
+			host: credentials.host,
+			port: credentials.port,
+			user: credentials.user,
+			password: credentials.password,
+			rejectUnauthorized: !credentials.ignoreUnauthorized,
+			ca: credentials.caCertificate,
+		},
+		opts: config.jdbcOptions,
+		maxSize: size,
+		startingSize: size,
+	});
+	await pool.init();
+	return pool;
+}
+
+async function createManagedPool(config: RuntimeConfig): Promise<ManagedPool> {
+	const size = config.credentials.poolSize;
+	return { pool: await createPool(config, size), semaphore: new Semaphore(size) };
+}
+
+export async function getManagedPool(config: RuntimeConfig): Promise<ManagedPool> {
+	if (!config.credentials.poolEnabled) {
+		throw new Error('Internal error: process-local pool requested while pooling is disabled');
+	}
+	const key = poolKey(config);
+	let pending = pools.get(key);
+	if (!pending) {
+		pending = createManagedPool(config).catch((error) => {
+			pools.delete(key);
+			throw error;
+		});
+		pools.set(key, pending);
+	}
+	return await pending;
+}
+
+export async function invalidateManagedPool(config: RuntimeConfig): Promise<void> {
+	if (!config.credentials.poolEnabled) return;
+	const key = poolKey(config);
+	const pending = pools.get(key);
+	pools.delete(key);
+	if (!pending) return;
+	try {
+		const managed = await pending;
+		managed.pool.end();
+	} catch {
+		// Pool creation or shutdown already failed; it has been removed from the cache.
+	}
+}
+
+export async function withPoolSlot<T>(
+	config: RuntimeConfig,
+	callback: (pool: Pool) => Promise<T>,
+): Promise<T> {
+	if (!config.credentials.poolEnabled) {
+		const pool = await createPool(config, 1);
+		try {
+			return await callback(pool);
+		} finally {
+			pool.end();
+		}
+	}
+
+	const managed = await getManagedPool(config);
+	const release = await managed.semaphore.acquire(config.credentials.poolWaitSeconds * 1000);
+	try {
+		return await callback(managed.pool);
+	} finally {
+		release();
+	}
+}
+
+export function isTransportError(error: unknown): boolean {
+	const message = error instanceof Error ? error.message : String(error);
+	return /ECONNRESET|ECONNREFUSED|EPIPE|ETIMEDOUT|ENOTFOUND|websocket|socket|connection failed|connection closed|code 1006/i.test(
+		message,
+	);
+}
