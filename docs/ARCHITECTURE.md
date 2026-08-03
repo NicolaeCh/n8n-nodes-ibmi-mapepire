@@ -3,56 +3,59 @@
 ```mermaid
 flowchart LR
   W[n8n workflow item] --> N[IBM i Db2 Mapepire node]
-  C[Encrypted IBM i Mapepire credential] --> N
+  C[Encrypted n8n credential] --> N
   N --> V[SQL subset and policy validator]
-  V --> L[Parameter and batch limiter]
-  L --> P{Pool enabled?}
-  P -->|yes| MP[Process-local Pool + semaphore]
-  P -->|no| EP[One-execution Pool]
-  MP --> M[@ibm/mapepire-js 0.6.1]
+  V --> B[Parameter and batch validation]
+  B --> P{Pool enabled?}
+  P -->|yes| MP[Process-local pool plus semaphore]
+  P -->|no| EP[One-execution pool]
+  MP --> M[Bundled official Mapepire 0.6.1]
   EP --> M
-  M -->|secure WebSocket, default 8076| S[Mapepire server]
+  M -->|Secure WebSocket, usually 8076| S[Mapepire server]
   S --> D[(Db2 for IBM i)]
 ```
 
-## Execution sequence
+## Build-time vendoring
 
 ```mermaid
-sequenceDiagram
-  participant W as n8n workflow
-  participant N as Community node
-  participant V as Validator
-  participant P as Mapepire Pool
-  participant D as Db2 for IBM i
-  W->>N: input + operation + SQL + parameters
-  N->>V: validate verb, subset, schemas, routines, placeholders
-  V-->>N: target/read schemas + placeholder count
-  N->>P: acquire slot or create one-execution pool
-  P->>D: prepared SQL with bindings
-  D-->>P: page(s) or update count
-  P-->>N: Mapepire result
-  N-->>W: n8n item(s) + optional metadata
+flowchart LR
+  I[npm installs exact Mapepire 0.6.1 as dev input] --> B[n8n-node build]
+  B --> V[postbuild version, license, size and export checks]
+  V --> C[Copy official dist/index.js]
+  C --> R[Relative runtime file under dist]
+  V --> L[Copy Apache-2.0 license]
+  V --> H[Write SHA-256 manifest]
+  R --> T[npm tarball with no third-party runtime dependency]
+  L --> T
+  H --> T
 ```
+
+The source imports Mapepire declarations only as TypeScript types. Runtime code
+loads `./vendor/mapepire-js.cjs`, so the installed n8n package does not resolve
+an external `@ibm/mapepire-js` module.
 
 ## Connection lifecycle
 
-With `MAPEPIRE_POOL_ENABLED=true`, one pool is cached per unique credential
-configuration in each n8n process. A semaphore limits simultaneous work to
-`MAPEPIRE_POOL_SIZE`, with `MAPEPIRE_POOL_WAIT_SECONDS` as the queue timeout.
+With pooling enabled, one pool is cached per unique credential configuration in
+each n8n process. A semaphore limits simultaneous executions to the configured
+pool size and applies the configured wait timeout.
 
-With pooling disabled, every node execution initializes a size-one pool and
-closes it in `finally`.
+With pooling disabled, every execution creates a one-connection pool and closes
+it in `finally`.
 
-Queue-mode workers and horizontally scaled instances have independent pools.
-The maximum IBM i SQL job estimate is therefore:
+Queue workers and horizontally scaled n8n instances maintain independent pools.
+Estimate IBM i SQL jobs as:
 
 ```text
-pool size × n8n processes that execute this credential
+pool size × number of n8n processes executing that credential
 ```
 
 ## Failure behavior
 
-A SELECT transport failure can invalidate the process-local pool and retry once.
-A write never retries because the transport can fail after Db2 commits. The
-workflow receives the error and must reconcile the target data before deciding
-to repeat the operation.
+- SQL or policy errors are not retried.
+- A transport-level SELECT failure can invalidate the pool and retry once.
+- INSERT, UPDATE, and CREATE TABLE are never retried.
+- A failed pool-initialization promise is evicted from the cache so a later
+  execution can reconnect.
+- A write transport error may have occurred after Db2 committed; reconcile the
+  target data before manual repetition.

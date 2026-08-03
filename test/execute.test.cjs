@@ -172,3 +172,20 @@ test('writes pass batch parameters unchanged and are never retried', async () =>
   assert.equal(global.__MAPEPIRE_FAKE__.pools[0].writeCalls, 1);
   await invalidateManagedPool(failingCfg);
 });
+
+test('failed pool initialization is evicted so a later execution can reconnect', async () => {
+  reset([
+    { initError: new Error('authentication failed') },
+    { query: { firstPage: page([{ OK: 1 }], true) } },
+  ]);
+  const cfg = config({ retrySelectOnce: false });
+  await assert.rejects(
+    executeSelect(node, cfg, 'SELECT 1 AS OK FROM APPDATA.T', []),
+    /authentication failed/,
+  );
+  const result = await executeSelect(node, cfg, 'SELECT 1 AS OK FROM APPDATA.T', []);
+  assert.deepEqual(result.rows, [{ OK: 1 }]);
+  assert.equal(global.__MAPEPIRE_FAKE__.pools.length, 2);
+  assert.equal(global.__MAPEPIRE_FAKE__.pools[0].ended, true);
+  await invalidateManagedPool(cfg);
+});

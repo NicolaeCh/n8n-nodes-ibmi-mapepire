@@ -1,7 +1,0 @@
-Supplied local npm tarball: n8n-nodes-ibmi-mapepire-0.1.4.tgz
-Version: 0.1.4
-Size: 29220 bytes
-SHA-256: da58cf007f78e51c81555a14d41ec2386afd18989ba8113c297b77422a2b2f59
-SHA-1 (npm shasum): 437fb80323acd1ac3f30035164a0650c6e726de5
-
-The published npm registry will calculate its own SHA-512 integrity value at publication time.

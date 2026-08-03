@@ -1,4 +1,6 @@
-export class PoolWaitTimeoutError extends Error {
+import { IbmiMapepireError } from './errors';
+
+export class PoolWaitTimeoutError extends IbmiMapepireError {
 	constructor(timeoutMs: number) {
 		super(`No Mapepire pool slot became available within ${timeoutMs} ms`);
 		this.name = 'PoolWaitTimeoutError';
@@ -16,7 +18,7 @@ export class Semaphore {
 	private readonly queue: Waiter[] = [];
 
 	constructor(private readonly limit: number) {
-		if (!Number.isInteger(limit) || limit < 1) throw new Error('Semaphore limit must be positive');
+		if (!Number.isInteger(limit) || limit < 1) throw new IbmiMapepireError('Semaphore limit must be positive');
 	}
 
 	async acquire(timeoutMs: number): Promise<() => void> {

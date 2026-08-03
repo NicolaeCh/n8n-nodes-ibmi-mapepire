@@ -1,3 +1,5 @@
+import { IbmiMapepireError } from './errors';
+
 export type SqlOperation = 'select' | 'insert' | 'update' | 'createTable';
 
 export interface SqlPolicy {
@@ -173,7 +175,7 @@ export function parseIdentifierList(
 ): Set<string> {
 	const text = typeof raw === 'string' ? raw.trim() : '';
 	if (!text) {
-		if (required) throw new Error(`${fieldName} must contain at least one identifier`);
+		if (required) throw new IbmiMapepireError(`${fieldName} must contain at least one identifier`);
 		return new Set<string>();
 	}
 
@@ -182,15 +184,15 @@ export function parseIdentifierList(
 		const identifier = value.trim().toUpperCase();
 		if (!identifier) continue;
 		if (identifier.includes('*') || identifier === 'ALL' || identifier === '*ALL') {
-			throw new Error(`${fieldName} does not accept wildcards or *ALL`);
+			throw new IbmiMapepireError(`${fieldName} does not accept wildcards or *ALL`);
 		}
 		if (!IDENTIFIER.test(identifier)) {
-			throw new Error(`${fieldName} contains an invalid unquoted SQL identifier: ${value}`);
+			throw new IbmiMapepireError(`${fieldName} contains an invalid unquoted SQL identifier: ${value}`);
 		}
 		result.add(identifier);
 	}
 	if (required && result.size === 0) {
-		throw new Error(`${fieldName} must contain at least one identifier`);
+		throw new IbmiMapepireError(`${fieldName} must contain at least one identifier`);
 	}
 	return result;
 }
@@ -205,7 +207,7 @@ export function parseFunctionList(raw: unknown, fieldName: string): Set<string> 
 
 export function parseOptionalSchema(raw: unknown, fieldName: string): string | undefined {
 	const schemas = parseIdentifierList(raw, fieldName, false);
-	if (schemas.size > 1) throw new Error(`${fieldName} accepts exactly one schema`);
+	if (schemas.size > 1) throw new IbmiMapepireError(`${fieldName} accepts exactly one schema`);
 	return schemas.values().next().value as string | undefined;
 }
 
@@ -214,17 +216,17 @@ export const parseLibraryList = parseSchemaList;
 
 export function validatePolicy(policy: SqlPolicy): void {
 	if (policy.readSchemas.size === 0) {
-		throw new Error('SQL_ALLOWED_READ_SCHEMAS must contain at least one schema');
+		throw new IbmiMapepireError('SQL_ALLOWED_READ_SCHEMAS must contain at least one schema');
 	}
 	if (policy.writeSchema && SYSTEM_WRITE_DENYLIST.has(policy.writeSchema)) {
-		throw new Error(`Writes to protected system schema ${policy.writeSchema} are never allowed`);
+		throw new IbmiMapepireError(`Writes to protected system schema ${policy.writeSchema} are never allowed`);
 	}
 }
 
 function maskSql(sql: string, maxSqlLength: number): string {
-	if (typeof sql !== 'string' || sql.trim().length === 0) throw new Error('SQL statement is required');
+	if (typeof sql !== 'string' || sql.trim().length === 0) throw new IbmiMapepireError('SQL statement is required');
 	if (sql.length > maxSqlLength) {
-		throw new Error(`SQL statement exceeds the ${maxSqlLength} character limit`);
+		throw new IbmiMapepireError(`SQL statement exceeds the ${maxSqlLength} character limit`);
 	}
 
 	let result = '';
@@ -249,24 +251,24 @@ function maskSql(sql: string, maxSqlLength: number): string {
 			continue;
 		}
 		if (char === '"') {
-			throw new Error('Delimited/quoted SQL identifiers are not supported; use regular identifiers');
+			throw new IbmiMapepireError('Delimited/quoted SQL identifiers are not supported; use regular identifiers');
 		}
-		if (char === ';') throw new Error('Semicolons and multiple SQL statements are not allowed');
+		if (char === ';') throw new IbmiMapepireError('Semicolons and multiple SQL statements are not allowed');
 		if ((char === '-' && next === '-') || (char === '/' && next === '*') || (char === '*' && next === '/')) {
-			throw new Error('SQL comments are not allowed');
+			throw new IbmiMapepireError('SQL comments are not allowed');
 		}
 		if (char === '\0' || (char < ' ' && !['\t', '\r', '\n'].includes(char))) {
-			throw new Error('SQL contains unsupported control characters');
+			throw new IbmiMapepireError('SQL contains unsupported control characters');
 		}
 		if (char === '(') depth += 1;
 		if (char === ')') {
 			depth -= 1;
-			if (depth < 0) throw new Error('SQL has unbalanced parentheses');
+			if (depth < 0) throw new IbmiMapepireError('SQL has unbalanced parentheses');
 		}
 		result += char.toUpperCase();
 	}
-	if (inString) throw new Error('SQL has an unterminated string literal');
-	if (depth !== 0) throw new Error('SQL has unbalanced parentheses');
+	if (inString) throw new IbmiMapepireError('SQL has an unterminated string literal');
+	if (depth !== 0) throw new IbmiMapepireError('SQL has unbalanced parentheses');
 	return result;
 }
 
@@ -319,7 +321,7 @@ function wordSet(tokens: Token[]): Set<string> {
 function assertNoForbiddenWords(tokens: Token[], forbidden: Set<string>): void {
 	for (const token of tokens) {
 		if (token.kind === 'word' && forbidden.has(token.value)) {
-			throw new Error(`SQL keyword ${token.value} is not allowed for this operation`);
+			throw new IbmiMapepireError(`SQL keyword ${token.value} is not allowed for this operation`);
 		}
 	}
 }
@@ -333,22 +335,22 @@ function parseQualifiedName(
 	const dot = tokens[startIndex + 1];
 	const object = tokens[startIndex + 2];
 	if (!library || library.kind !== 'word' || !dot || dot.value !== '.' || !object || object.kind !== 'word') {
-		throw new Error(`${context} must use an explicitly qualified SCHEMA.OBJECT name`);
+		throw new IbmiMapepireError(`${context} must use an explicitly qualified SCHEMA.OBJECT name`);
 	}
 	return { library: library.value, object: object.value, nextIndex: startIndex + 3 };
 }
 
 function assertSchemaAllowed(schema: string, allowed: Set<string>, action: string): void {
-	if (!allowed.has(schema)) throw new Error(`Schema ${schema} is not allowlisted for ${action}`);
+	if (!allowed.has(schema)) throw new IbmiMapepireError(`Schema ${schema} is not allowlisted for ${action}`);
 }
 
 function assertWriteSchema(schema: string, writeSchema: string | undefined, action: string): void {
 	if (SYSTEM_WRITE_DENYLIST.has(schema)) {
-		throw new Error(`Writes to protected system schema ${schema} are never allowed`);
+		throw new IbmiMapepireError(`Writes to protected system schema ${schema} are never allowed`);
 	}
-	if (!writeSchema) throw new Error(`${action} is disabled because SQL_ALLOWED_WRITE_SCHEMA is blank`);
+	if (!writeSchema) throw new IbmiMapepireError(`${action} is disabled because SQL_ALLOWED_WRITE_SCHEMA is blank`);
 	if (schema !== writeSchema) {
-		throw new Error(`Schema ${schema} is not the configured SQL_ALLOWED_WRITE_SCHEMA`);
+		throw new IbmiMapepireError(`Schema ${schema} is not the configured SQL_ALLOWED_WRITE_SCHEMA`);
 	}
 }
 
@@ -365,7 +367,7 @@ function rejectCommaJoins(tokens: Token[]): void {
 			continue;
 		}
 		if (token.value === ',' && activeFromDepths.has(token.depth)) {
-			throw new Error('Comma joins are not allowed; use explicit JOIN with qualified objects');
+			throw new IbmiMapepireError('Comma joins are not allowed; use explicit JOIN with qualified objects');
 		}
 	}
 }
@@ -377,10 +379,10 @@ function extractReadSchemas(tokens: Token[]): string[] {
 		const token = tokens[index];
 		if (token.kind !== 'word' || (token.value !== 'FROM' && token.value !== 'JOIN')) continue;
 		const next = tokens[index + 1];
-		if (!next) throw new Error(`${token.value} is missing a source object`);
+		if (!next) throw new IbmiMapepireError(`${token.value} is missing a source object`);
 		if (next.value === '(') continue;
 		if (next.kind === 'word' && next.value === 'TABLE') {
-			throw new Error('SQL table functions are not allowed');
+			throw new IbmiMapepireError('SQL table functions are not allowed');
 		}
 		const qualified = parseQualifiedName(tokens, index + 1, 'Read object');
 		schemas.add(qualified.library);
@@ -395,7 +397,7 @@ function validateFunctionCalls(tokens: Token[], allowedFunctions: Set<string>): 
 		const routine = tokens[index + 2];
 		const open = tokens[index + 3];
 		if (schema.kind === 'word' && dot.value === '.' && routine.kind === 'word' && open.value === '(') {
-			throw new Error(`Schema-qualified SQL routine ${schema.value}.${routine.value} is not allowed`);
+			throw new IbmiMapepireError(`Schema-qualified SQL routine ${schema.value}.${routine.value} is not allowed`);
 		}
 	}
 
@@ -405,12 +407,12 @@ function validateFunctionCalls(tokens: Token[], allowedFunctions: Set<string>): 
 		if (name.kind !== 'word' || open.value !== '(') continue;
 		if (tokens[index - 1]?.value === '.') continue;
 		if (NON_FUNCTION_PAREN_WORDS.has(name.value)) continue;
-		if (name.value === 'TABLE') throw new Error('SQL table functions are not allowed');
+		if (name.value === 'TABLE') throw new IbmiMapepireError('SQL table functions are not allowed');
 		if (DANGEROUS_FUNCTION_NAMES.has(name.value) || name.value.startsWith('IFS_WRITE')) {
-			throw new Error(`Potentially side-effecting SQL function ${name.value} is not allowed`);
+			throw new IbmiMapepireError(`Potentially side-effecting SQL function ${name.value} is not allowed`);
 		}
 		if (!allowedFunctions.has(name.value)) {
-			throw new Error(`SQL function ${name.value} is not listed in SQL_ALLOWED_FUNCTIONS`);
+			throw new IbmiMapepireError(`SQL function ${name.value} is not listed in SQL_ALLOWED_FUNCTIONS`);
 		}
 	}
 }
@@ -464,7 +466,7 @@ function validateCreateDefinitions(tokens: Token[], startIndex: number): void {
 
 	for (let index = 0; index + 2 < definitions.length; index += 1) {
 		if (definitions[index].kind === 'word' && definitions[index + 1].value === '.' && definitions[index + 2].kind === 'word') {
-			throw new Error('CREATE TABLE definitions may not reference schema-qualified objects');
+			throw new IbmiMapepireError('CREATE TABLE definitions may not reference schema-qualified objects');
 		}
 	}
 
@@ -480,7 +482,7 @@ function validateCreateDefinitions(tokens: Token[], startIndex: number): void {
 			definitions[index + 3]?.value === 'AS' &&
 			definitions[index + 4]?.value === 'IDENTITY';
 		if (!alwaysIdentity && !defaultIdentity) {
-			throw new Error('Only GENERATED ... AS IDENTITY columns are allowed');
+			throw new IbmiMapepireError('Only GENERATED ... AS IDENTITY columns are allowed');
 		}
 	}
 
@@ -489,7 +491,7 @@ function validateCreateDefinitions(tokens: Token[], startIndex: number): void {
 		const open = definitions[index + 1];
 		if (name.kind !== 'word' || open.value !== '(') continue;
 		if (!CREATE_ALLOWED_PAREN_WORDS.has(name.value)) {
-			throw new Error(`CREATE TABLE expression or routine ${name.value}(...) is not allowed`);
+			throw new IbmiMapepireError(`CREATE TABLE expression or routine ${name.value}(...) is not allowed`);
 		}
 	}
 }
@@ -498,16 +500,16 @@ export function validateSql(sql: string, operation: SqlOperation, policy: SqlPol
 	validatePolicy(policy);
 	const masked = maskSql(sql, policy.maxSqlLength ?? 100_000).trim();
 	const tokens = tokenize(masked);
-	if (tokens.length === 0 || tokens[0].kind !== 'word') throw new Error('SQL statement is empty');
+	if (tokens.length === 0 || tokens[0].kind !== 'word') throw new IbmiMapepireError('SQL statement is empty');
 	const words = wordSet(tokens);
 	const placeholderCount = countPlaceholders(masked);
 
 	if (operation === 'select') {
-		if (tokens[0].value !== 'SELECT') throw new Error('SELECT operation requires a statement beginning with SELECT');
+		if (tokens[0].value !== 'SELECT') throw new IbmiMapepireError('SELECT operation requires a statement beginning with SELECT');
 		assertNoForbiddenWords(tokens, SELECT_FORBIDDEN);
-		if (words.has('INTO')) throw new Error('SELECT INTO is not allowed');
+		if (words.has('INTO')) throw new IbmiMapepireError('SELECT INTO is not allowed');
 		if (masked.includes('FINAL TABLE') || masked.includes('OLD TABLE') || masked.includes('NEW TABLE')) {
-			throw new Error('Data-change table references are not allowed');
+			throw new IbmiMapepireError('Data-change table references are not allowed');
 		}
 		const readLibraries = validateReads(tokens, policy);
 		return { operation, readLibraries, placeholderCount };
@@ -515,16 +517,16 @@ export function validateSql(sql: string, operation: SqlOperation, policy: SqlPol
 
 	if (operation === 'insert') {
 		if (tokens[0].value !== 'INSERT' || tokens[1]?.value !== 'INTO') {
-			throw new Error('INSERT operation requires INSERT INTO SCHEMA.TABLE');
+			throw new IbmiMapepireError('INSERT operation requires INSERT INTO SCHEMA.TABLE');
 		}
 		assertNoForbiddenWords(tokens.slice(1), new Set([...WRITE_FORBIDDEN, 'UPDATE']));
 		if (words.has('SELECT') || words.has('WITH')) {
-			throw new Error('INSERT ... SELECT and CTE-based INSERT are not allowed; use VALUES');
+			throw new IbmiMapepireError('INSERT ... SELECT and CTE-based INSERT are not allowed; use VALUES');
 		}
 		const target = parseQualifiedName(tokens, 2, 'INSERT target');
 		assertWriteSchema(target.library, policy.writeSchema, 'INSERT');
 		if (!hasTopLevelWord(tokens, 'VALUES', target.nextIndex)) {
-			throw new Error('INSERT must use an explicit VALUES clause');
+			throw new IbmiMapepireError('INSERT must use an explicit VALUES clause');
 		}
 		validateFunctionCalls(tokens.slice(target.nextIndex), policy.allowedFunctions);
 		return {
@@ -537,13 +539,13 @@ export function validateSql(sql: string, operation: SqlOperation, policy: SqlPol
 	}
 
 	if (operation === 'update') {
-		if (tokens[0].value !== 'UPDATE') throw new Error('UPDATE operation requires UPDATE SCHEMA.TABLE SET ...');
+		if (tokens[0].value !== 'UPDATE') throw new IbmiMapepireError('UPDATE operation requires UPDATE SCHEMA.TABLE SET ...');
 		assertNoForbiddenWords(tokens.slice(1), new Set([...WRITE_FORBIDDEN, 'INSERT']));
 		const target = parseQualifiedName(tokens, 1, 'UPDATE target');
 		assertWriteSchema(target.library, policy.writeSchema, 'UPDATE');
-		if (!hasTopLevelWord(tokens, 'SET', target.nextIndex)) throw new Error('UPDATE statement must contain SET');
+		if (!hasTopLevelWord(tokens, 'SET', target.nextIndex)) throw new IbmiMapepireError('UPDATE statement must contain SET');
 		if (!policy.allowFullTableUpdate && !hasTopLevelWord(tokens, 'WHERE', target.nextIndex)) {
-			throw new Error('UPDATE without a top-level WHERE is blocked; explicitly enable full-table update to proceed');
+			throw new IbmiMapepireError('UPDATE without a top-level WHERE is blocked; explicitly enable full-table update to proceed');
 		}
 		const readLibraries = validateReads(tokens, policy);
 		return {
@@ -556,12 +558,12 @@ export function validateSql(sql: string, operation: SqlOperation, policy: SqlPol
 	}
 
 	if (tokens[0].value !== 'CREATE' || tokens[1]?.value !== 'TABLE') {
-		throw new Error('CREATE TABLE operation requires CREATE TABLE SCHEMA.TABLE (...)');
+		throw new IbmiMapepireError('CREATE TABLE operation requires CREATE TABLE SCHEMA.TABLE (...)');
 	}
 	const target = parseQualifiedName(tokens, 2, 'CREATE TABLE target');
 	assertWriteSchema(target.library, policy.writeSchema, 'CREATE TABLE');
 	if (tokens[target.nextIndex]?.value !== '(' || !masked.endsWith(')')) {
-		throw new Error('Only CREATE TABLE SCHEMA.TABLE (explicit column definitions) is allowed');
+		throw new IbmiMapepireError('Only CREATE TABLE SCHEMA.TABLE (explicit column definitions) is allowed');
 	}
 	validateCreateDefinitions(tokens, target.nextIndex);
 	return {
@@ -576,7 +578,7 @@ export function validateSql(sql: string, operation: SqlOperation, policy: SqlPol
 function assertBindingScalar(value: unknown, location: string): asserts value is string | number {
 	if (typeof value === 'string') return;
 	if (typeof value === 'number' && Number.isFinite(value)) return;
-	throw new Error(`${location} must be a finite number or string; null and booleans are not supported`);
+	throw new IbmiMapepireError(`${location} must be a finite number or string; null and booleans are not supported`);
 }
 
 export function parseAndValidateParameters(
@@ -590,33 +592,25 @@ export function parseAndValidateParameters(
 		const trimmed = value.trim();
 		if (!trimmed) value = [];
 		else {
-			let parseError: string | undefined;
-			try {
-				value = JSON.parse(trimmed) as unknown;
-			} catch (error) {
-				parseError = error instanceof Error ? error.message : String(error);
-			}
-			if (parseError !== undefined) {
-				throw new Error(`Parameters must be valid JSON: ${parseError}`);
-			}
+			value = JSON.parse(trimmed) as unknown;
 		}
 	}
 	if (value === undefined || value === null || value === '') value = [];
-	if (!Array.isArray(value)) throw new Error('Parameters must be a JSON array');
+	if (!Array.isArray(value)) throw new IbmiMapepireError('Parameters must be a JSON array');
 
 	const isBatch = value.some((entry) => Array.isArray(entry));
 	if (isBatch) {
-		if (!allowBatch) throw new Error('Batch parameters are supported only for INSERT and UPDATE');
+		if (!allowBatch) throw new IbmiMapepireError('Batch parameters are supported only for INSERT and UPDATE');
 		if (!value.every((entry) => Array.isArray(entry))) {
-			throw new Error('Batch parameters must be a two-dimensional array');
+			throw new IbmiMapepireError('Batch parameters must be a two-dimensional array');
 		}
 		if (value.length > maxBatchSize) {
-			throw new Error(`Batch contains ${value.length} rows; maximum is ${maxBatchSize}`);
+			throw new IbmiMapepireError(`Batch contains ${value.length} rows; maximum is ${maxBatchSize}`);
 		}
 		for (let rowIndex = 0; rowIndex < value.length; rowIndex += 1) {
 			const row = value[rowIndex] as unknown[];
 			if (row.length !== placeholderCount) {
-				throw new Error(`Batch row ${rowIndex + 1} has ${row.length} values; SQL has ${placeholderCount} placeholders`);
+				throw new IbmiMapepireError(`Batch row ${rowIndex + 1} has ${row.length} values; SQL has ${placeholderCount} placeholders`);
 			}
 			for (let columnIndex = 0; columnIndex < row.length; columnIndex += 1) {
 				assertBindingScalar(row[columnIndex], `Batch row ${rowIndex + 1}, value ${columnIndex + 1}`);
@@ -626,7 +620,7 @@ export function parseAndValidateParameters(
 	}
 
 	if (value.length !== placeholderCount) {
-		throw new Error(`Parameters contain ${value.length} values; SQL has ${placeholderCount} placeholders`);
+		throw new IbmiMapepireError(`Parameters contain ${value.length} values; SQL has ${placeholderCount} placeholders`);
 	}
 	for (let index = 0; index < value.length; index += 1) {
 		assertBindingScalar(value[index], `Parameter ${index + 1}`);

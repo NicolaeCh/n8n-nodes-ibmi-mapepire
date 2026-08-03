@@ -6,10 +6,11 @@ import {
 	parseSchemaList,
 	validatePolicy,
 } from './security';
+import { IbmiMapepireError } from './errors';
 import type { IbmiMapepireCredentials, RuntimeConfig } from './types';
 
 function requiredString(value: unknown, name: string): string {
-	if (typeof value !== 'string' || value.trim() === '') throw new Error(`${name} is required`);
+	if (typeof value !== 'string' || value.trim() === '') throw new IbmiMapepireError(`${name} is required`);
 	return value.trim();
 }
 
@@ -20,7 +21,7 @@ function optionalString(value: unknown): string | undefined {
 function integerInRange(value: unknown, name: string, minimum: number, maximum: number): number {
 	const parsed = typeof value === 'number' ? value : Number(value);
 	if (!Number.isInteger(parsed) || parsed < minimum || parsed > maximum) {
-		throw new Error(`${name} must be an integer from ${minimum} to ${maximum}`);
+		throw new IbmiMapepireError(`${name} must be an integer from ${minimum} to ${maximum}`);
 	}
 	return parsed;
 }
@@ -34,25 +35,16 @@ function booleanValue(value: unknown, fallback: boolean): boolean {
 
 function loadCaCertificate(inlinePem: string | undefined, caPath: string | undefined): string | undefined {
 	if (inlinePem && caPath) {
-		throw new Error('Set either CA Certificate PEM or MAPEPIRE_CA_PATH, not both');
+		throw new IbmiMapepireError('Set either CA Certificate PEM or MAPEPIRE_CA_PATH, not both');
 	}
 	if (inlinePem) {
-		if (inlinePem.length > 1_000_000) throw new Error('CA Certificate PEM exceeds 1 MB');
+		if (inlinePem.length > 1_000_000) throw new IbmiMapepireError('CA Certificate PEM exceeds 1 MB');
 		return inlinePem;
 	}
 	if (!caPath) return undefined;
-	let content: string | undefined;
-	let readError: string | undefined;
-	try {
-		content = readFileSync(caPath, 'utf8');
-	} catch (error) {
-		readError = error instanceof Error ? error.message : String(error);
-	}
-	if (readError !== undefined || content === undefined) {
-		throw new Error(`Unable to read MAPEPIRE_CA_PATH ${caPath}: ${readError ?? 'unknown error'}`);
-	}
-	if (!content.trim()) throw new Error(`MAPEPIRE_CA_PATH ${caPath} is empty`);
-	if (content.length > 1_000_000) throw new Error('CA certificate file exceeds 1 MB');
+	const content = readFileSync(caPath, 'utf8');
+	if (!content.trim()) throw new IbmiMapepireError(`MAPEPIRE_CA_PATH ${caPath} is empty`);
+	if (content.length > 1_000_000) throw new IbmiMapepireError('CA certificate file exceeds 1 MB');
 	return content.trim();
 }
 

@@ -1,4 +1,4 @@
-import type { BindingValue, JDBCOptions, QueryMetaData } from '@ibm/mapepire-js';
+import type { BindingValue, JDBCOptions, QueryMetaData } from './mapepireTypes';
 import type { IDataObject } from 'n8n-workflow';
 
 export type SqlOperation = 'select' | 'insert' | 'update' | 'createTable';

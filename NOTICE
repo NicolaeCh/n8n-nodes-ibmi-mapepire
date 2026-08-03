@@ -1,9 +1,14 @@
 n8n-nodes-ibmi-mapepire
 Copyright 2026 Nicolae Chirea
 
-This package uses @ibm/mapepire-js, licensed under the Apache License 2.0.
-Mapepire project: https://github.com/Mapepire-IBMi/mapepire-js
+This project embeds the official @ibm/mapepire-js version 0.6.1 build artifact
+during its release build. @ibm/mapepire-js is licensed under the Apache License
+2.0 and is maintained at:
+https://github.com/Mapepire-IBMi/mapepire-js
+
+The built npm package includes the upstream license and a SHA-256 manifest under
+dist/vendor-licenses.
 
 n8n is a trademark of n8n GmbH. IBM, IBM i, and Db2 are trademarks of
-International Business Machines Corporation. This project is independent and
-is not an official IBM or n8n product.
+International Business Machines Corporation. This independent project is not an
+official IBM or n8n product.

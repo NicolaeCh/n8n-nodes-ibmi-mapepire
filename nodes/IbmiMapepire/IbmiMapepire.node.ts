@@ -10,14 +10,11 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 import { runtimeConfigFromCredentials } from './lib/config';
+import { normalizeError } from './lib/errors';
 import { executeSelect, executeWrite } from './lib/execute';
 import { createPool } from './lib/poolManager';
 import { parseAndValidateParameters, validateSql } from './lib/security';
 import type { RuntimeConfig, SqlOperation } from './lib/types';
-
-function toError(error: unknown): Error {
-	return error instanceof Error ? error : new Error(String(error));
-}
 
 function toJsonObject(value: unknown): IDataObject {
 	if (value === undefined || value === null) return {};
@@ -133,7 +130,6 @@ export class IbmiMapepire implements INodeType {
 		],
 	};
 
-
 	methods = {
 		credentialTest: {
 			async ibmiMapepireCredentialTest(
@@ -160,7 +156,11 @@ export class IbmiMapepire implements INodeType {
 						message: error instanceof Error ? error.message : String(error),
 					};
 				} finally {
-					pool?.end();
+					try {
+						pool?.end();
+					} catch {
+						// The connection test result must not be replaced by a shutdown error.
+					}
 				}
 			},
 		},
@@ -174,7 +174,7 @@ export class IbmiMapepire implements INodeType {
 		try {
 			config = runtimeConfigFromCredentials(decryptedCredentials);
 		} catch (error) {
-			throw new NodeOperationError(this.getNode(), toError(error));
+			throw new NodeOperationError(this.getNode(), normalizeError(error));
 		}
 
 		for (let itemIndex = 0; itemIndex < inputItems.length; itemIndex += 1) {
@@ -275,7 +275,7 @@ export class IbmiMapepire implements INodeType {
 					});
 					continue;
 				}
-				throw new NodeOperationError(this.getNode(), toError(error), { itemIndex });
+				throw new NodeOperationError(this.getNode(), normalizeError(error), { itemIndex });
 			}
 		}
 

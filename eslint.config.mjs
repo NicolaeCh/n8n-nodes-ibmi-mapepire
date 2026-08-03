@@ -1,12 +1,8 @@
-import { defineConfig } from 'eslint/config';
+import { config } from '@n8n/node-cli/eslint';
 
-export default defineConfig([
-  {
-    ignores: [
-      'dist/**',
-      '.test-dist/**',
-      'node_modules/**',
-      'tools/type-stubs/**',
-    ],
-  },
-]);
+export default [
+	...config,
+	{
+		ignores: ['dist/**', '.test-dist/**', 'release/**', 'tools/**', 'test/**'],
+	},
+];

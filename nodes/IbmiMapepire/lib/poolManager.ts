@@ -1,10 +1,11 @@
 import { createHash } from 'node:crypto';
-import { Pool } from '@ibm/mapepire-js';
+import { Pool, type MapepirePool } from './mapepireRuntime';
+import { IbmiMapepireError, normalizeError } from './errors';
 import { Semaphore } from './semaphore';
 import type { RuntimeConfig } from './types';
 
 interface ManagedPool {
-	pool: Pool;
+	pool: MapepirePool;
 	semaphore: Semaphore;
 }
 
@@ -28,7 +29,7 @@ function poolKey(config: RuntimeConfig): string {
 		.digest('hex');
 }
 
-export async function createPool(config: RuntimeConfig, size: number): Promise<Pool> {
+export async function createPool(config: RuntimeConfig, size: number): Promise<MapepirePool> {
 	const credentials = config.credentials;
 	const pool = new Pool({
 		creds: {
@@ -43,8 +44,20 @@ export async function createPool(config: RuntimeConfig, size: number): Promise<P
 		maxSize: size,
 		startingSize: size,
 	});
-	await pool.init();
-	return pool;
+	try {
+		await pool.init();
+		return pool;
+	} catch (error) {
+		try {
+			pool.end();
+		} catch {
+			// Ignore shutdown failure while preserving the initialization error.
+		}
+		const normalized = normalizeError(error);
+		throw new IbmiMapepireError(`Mapepire pool initialization failed: ${normalized.message}`, {
+			cause: normalized,
+		});
+	}
 }
 
 async function createManagedPool(config: RuntimeConfig): Promise<ManagedPool> {
@@ -54,16 +67,18 @@ async function createManagedPool(config: RuntimeConfig): Promise<ManagedPool> {
 
 export async function getManagedPool(config: RuntimeConfig): Promise<ManagedPool> {
 	if (!config.credentials.poolEnabled) {
-		throw new Error('Internal error: process-local pool requested while pooling is disabled');
+		throw new IbmiMapepireError('Internal error: process-local pool requested while pooling is disabled');
 	}
 	const key = poolKey(config);
 	let pending = pools.get(key);
 	if (!pending) {
-		pending = createManagedPool(config).catch((error) => {
-			pools.delete(key);
-			throw error;
-		});
+		pending = createManagedPool(config);
 		pools.set(key, pending);
+		void pending.catch(() => {
+			// Keep the original rejected promise for current callers, but remove it
+			// from the cache so a later execution can create a fresh pool.
+			pools.delete(key);
+		});
 	}
 	return await pending;
 }
@@ -84,14 +99,18 @@ export async function invalidateManagedPool(config: RuntimeConfig): Promise<void
 
 export async function withPoolSlot<T>(
 	config: RuntimeConfig,
-	callback: (pool: Pool) => Promise<T>,
+	callback: (pool: MapepirePool) => Promise<T>,
 ): Promise<T> {
 	if (!config.credentials.poolEnabled) {
 		const pool = await createPool(config, 1);
 		try {
 			return await callback(pool);
 		} finally {
-			pool.end();
+			try {
+				pool.end();
+			} catch {
+				// Do not turn a completed SQL operation into an apparent failure.
+			}
 		}
 	}
 

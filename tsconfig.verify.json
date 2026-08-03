@@ -4,13 +4,16 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "n8n-workflow": ["tools/type-stubs/n8n-workflow.d.ts"],
-      "@ibm/mapepire-js": ["tools/type-stubs/mapepire-js.d.ts"]
+      "n8n-workflow": [
+        "node_modules/.ibmi-mapepire-offline-types/n8n-workflow.d.ts"
+      ]
     }
   },
   "include": [
     "credentials/**/*.ts",
-    "nodes/**/*.ts",
-    "tools/type-stubs/**/*.d.ts"
+    "nodes/**/*.ts"
+  ],
+  "files": [
+    "node_modules/.ibmi-mapepire-offline-types/node-globals.d.ts"
   ]
 }

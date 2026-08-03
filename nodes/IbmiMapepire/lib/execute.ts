@@ -1,16 +1,14 @@
-import type { BindingValue, Pool, QueryMetaData } from '@ibm/mapepire-js';
+import type { BindingValue, QueryMetaData } from './mapepireTypes';
 import type { IDataObject, INode } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
+import { normalizeError } from './errors';
+import type { MapepirePool } from './mapepireRuntime';
 import { invalidateManagedPool, isTransportError, withPoolSlot } from './poolManager';
 import type {
 	RuntimeConfig,
 	SelectExecutionResult,
 	WriteExecutionResult,
 } from './types';
-
-function toError(error: unknown): Error {
-	return error instanceof Error ? error : new Error(String(error));
-}
 
 function assertMapepireSuccess(
 	node: INode,
@@ -28,7 +26,7 @@ async function executeSelectOnce(
 	sql: string,
 	parameters: BindingValue[],
 ): Promise<SelectExecutionResult> {
-	return await withPoolSlot(config, async (pool: Pool) => {
+	return await withPoolSlot(config, async (pool: MapepirePool) => {
 		const query = pool.query(sql, { parameters });
 		let metadata: QueryMetaData | undefined;
 		let sqlState = '';
@@ -80,10 +78,10 @@ async function executeSelectOnce(
 		}
 
 		if (executionError !== undefined) {
-			throw new NodeOperationError(node, toError(executionError));
+			throw new NodeOperationError(node, normalizeError(executionError));
 		}
 		if (closeError !== undefined) {
-			throw new NodeOperationError(node, toError(closeError), {
+			throw new NodeOperationError(node, normalizeError(closeError), {
 				description: 'The SQL query completed, but its cursor could not be closed.',
 			});
 		}
@@ -113,7 +111,7 @@ export async function executeSelect(
 			await invalidateManagedPool(config);
 			return await executeSelectOnce(node, config, sql, parameters);
 		}
-		throw new NodeOperationError(node, toError(error));
+		throw new NodeOperationError(node, normalizeError(error));
 	}
 }
 
@@ -124,12 +122,12 @@ export async function executeWrite(
 	parameters: BindingValue[],
 ): Promise<WriteExecutionResult> {
 	// Deliberately no retry. A transport failure can occur after Db2 committed the change.
-	return await withPoolSlot(config, async (pool: Pool) => {
+	return await withPoolSlot(config, async (pool: MapepirePool) => {
 		let result;
 		try {
 			result = await pool.execute<IDataObject>(sql, { parameters });
 		} catch (error) {
-			throw new NodeOperationError(node, toError(error));
+			throw new NodeOperationError(node, normalizeError(error));
 		}
 		assertMapepireSuccess(node, result, 'Write');
 		return {

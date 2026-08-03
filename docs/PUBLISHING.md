@@ -1,121 +1,81 @@
-# GitHub, npm, and n8n community publication
+# GitHub and npm publishing
 
-## 1. Create the GitHub repository
-
-Create a public repository named `n8n-nodes-ibmi-mapepire`, then from the
-project directory:
+## 1. Run the connected release gate
 
 ```bash
-git init
-git branch -M main
-git add .
-git commit -m "Initial IBM i Mapepire n8n community node"
-git remote add origin git@github.com:NicolaeCh/n8n-nodes-ibmi-mapepire.git
-git push -u origin main
+npm run release:build
 ```
 
-Enable GitHub Security Advisories, branch protection, and Dependabot as desired.
-Do not commit credentials, hostnames, CA private keys, npm tokens, or production
-SQL/logs.
+The command creates `package-lock.json` on the first run. Commit it together
+with the source before enabling CI.
 
-## 2. Connected build before first release
-
-Use Node.js 22.22 or newer:
+## 2. Inspect the package
 
 ```bash
-npm install
-npm run verify
-npm run lint
-npm run build
-npm pack --dry-run
+tar -tzf release/n8n-nodes-ibmi-mapepire-0.2.0.tgz
 ```
 
-`npm install` creates `package-lock.json`. Review and commit it before the first
-release, then change CI from `npm install` to `npm ci` if desired.
+Confirm that the tarball contains:
 
-Run the live IBM i matrix in `TESTING.md`. The supplied offline report cannot
-replace a test against the target Mapepire server, TLS chain, and IBM i release.
+```text
+dist/nodes/IbmiMapepire/lib/vendor/mapepire-js.cjs
+dist/vendor-licenses/mapepire-js-LICENSE.txt
+dist/vendor-licenses/mapepire-js-MANIFEST.json
+```
 
-## 3. First npm publication
+and does not contain `node_modules`, source tests, developer tools, credentials,
+private addresses, or certificate material.
 
-The package name already follows n8n's `n8n-nodes-` convention and includes the
-`n8n-community-node-package` keyword. Keep the package public and retain the
-`n8n` node/credential entries in `package.json`.
+## 3. Create the GitHub repository
 
-For first publication:
+Repository name:
+
+```text
+n8n-nodes-ibmi-mapepire
+```
+
+Push the complete source and generated lock file. The included CI tests Node
+22.22 and Node 24 with `npm ci`.
+
+## 4. Publish the first version
+
+Log into npm with two-factor authentication and publish:
 
 ```bash
-npm login
-npm publish --access public --provenance
+npm publish release/n8n-nodes-ibmi-mapepire-0.2.0.tgz --provenance --access public
 ```
 
-The npm account must be allowed to publish
-`n8n-nodes-ibmi-mapepire`. Use two-factor authentication. Never store an npm
-token in the repository.
-
-After publication, record the exact package integrity:
+Record the integrity value:
 
 ```bash
-npm view n8n-nodes-ibmi-mapepire@0.1.4 dist.integrity
+npm view n8n-nodes-ibmi-mapepire@0.2.0 dist.integrity
 ```
 
-That `sha512-...` value can be used as the n8n managed-package checksum.
+## 5. Configure trusted publishing
 
-## 4. Configure npm Trusted Publishing
+Configure npm trusted publishing for:
 
-After the package exists, configure npm Trusted Publishing for GitHub Actions:
-
-- owner: `NicolaeCh`
+- GitHub owner: `NicolaeCh`
 - repository: `n8n-nodes-ibmi-mapepire`
-- workflow: `publish.yml`
+- workflow: `.github/workflows/publish.yml`
 
-The included workflow requests `id-token: write`, installs npm 11.5.1 or newer,
-runs verification/build, and publishes with provenance. It does not require a
-long-lived npm token.
-
-## 5. Publish subsequent versions
-
-1. Update `package.json` and `CHANGELOG.md`.
-2. Run the complete test/build/package checks.
-3. Commit and push.
-4. Create and push a matching semantic-version tag.
+The supplied workflow requests `id-token: write` and publishes on a semantic
+version tag.
 
 ```bash
-git tag v0.1.4
-git push origin v0.1.4
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
-The tag starts `.github/workflows/publish.yml`.
+## 6. n8n community installation
 
-## 6. Make it directly installable in n8n
+After npm publication, self-hosted users install the exact package name from
+**Settings → Community Nodes**:
 
-For an **unverified** self-hosted community node, npm publication with the
-correct package name, keyword, compiled `dist` entries, and README is sufficient
-for users to install the exact package name from **Settings → Community Nodes**.
-No n8n Cloud listing is claimed.
-
-Current verified-community-node rules require no external runtime dependencies.
-This node must use `@ibm/mapepire-js`, so it should remain clearly documented as
-unverified unless n8n changes the rule or explicitly accepts the dependency.
-Do not remove Mapepire merely to obtain a verified badge, because that would
-violate this project's functional requirement.
-
-## 7. Release checklist
-
-```bash
-npm ci
-npm run verify
-npm run lint
-npm run build
-npm pack --dry-run
+```text
+n8n-nodes-ibmi-mapepire
 ```
 
-Also verify:
-
-- live SELECT/INSERT/UPDATE/CREATE tests passed in a disposable schema
-- write-interruption behavior was reconciled manually
-- package contains only intended files
-- required peer dependency is pinned exactly to `@ibm/mapepire-js@0.6.1`
-- no secrets, private hostnames, or certificates are in source or tarball
-- README version and declarative-install example match the release
-- npm integrity checksum is documented for operators
+The node is intentionally self-hosted/unverified because it can access a local
+CA path and connects directly to private IBM i infrastructure. Do not claim n8n
+Cloud verification.

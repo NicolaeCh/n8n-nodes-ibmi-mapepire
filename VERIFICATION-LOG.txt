@@ -1,0 +1,27 @@
+n8n-nodes-ibmi-mapepire 0.2.0 verification summary
+Date: 2026-08-03
+
+Executed successfully in the artifact environment:
+- POSIX shell syntax validation for release scripts
+- package/source policy verifier
+- TypeScript no-emit verification
+- offline production TypeScript compilation
+- 31/31 automated tests
+- no source-level @ibm/mapepire-js import
+- relative compiled vendor load inspection
+- failed-pool cleanup and reconnect verification
+- release packaging simulation (synthetic stand-in only)
+- vendor manifest size/SHA-256 verification
+- npm tarball structure verification
+- compiled node and credential entry-point smoke loading from the tarball
+- exclusion of TypeScript sources, declarations, source maps, tests, tools, and dev dependencies from the simulated tarball
+- YAML/JSON/SVG/static secret scans
+
+Not executed in this restricted environment:
+- npm registry installation of @n8n/node-cli@0.41.2
+- official n8n-node lint and n8n-node build
+- npm audit against the public npm advisory service
+- release build with the real @ibm/mapepire-js@0.6.1 npm bundle
+- live Mapepire/IBM i integration
+
+The source command RESET_LOCKFILE=1 npm run release:build is the mandatory connected release gate. It installs exact dependencies, audits the toolchain and Mapepire runtime, runs official n8n lint/build, runs all tests, embeds the real upstream Mapepire bundle and license, packs the npm artifact, and verifies the final tarball.

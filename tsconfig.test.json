@@ -7,19 +7,20 @@
     "outDir": ".test-dist",
     "paths": {
       "n8n-workflow": [
-        "tools/type-stubs/n8n-workflow.d.ts"
-      ],
-      "@ibm/mapepire-js": [
-        "tools/type-stubs/mapepire-js.d.ts"
+        "node_modules/.ibmi-mapepire-offline-types/n8n-workflow.d.ts"
       ]
     }
   },
   "include": [
+    "nodes/IbmiMapepire/lib/errors.ts",
     "nodes/IbmiMapepire/lib/config.ts",
     "nodes/IbmiMapepire/lib/security.ts",
     "nodes/IbmiMapepire/lib/semaphore.ts",
+    "nodes/IbmiMapepire/lib/mapepireRuntime.ts",
     "nodes/IbmiMapepire/lib/poolManager.ts",
-    "nodes/IbmiMapepire/lib/execute.ts",
-    "tools/type-stubs/**/*.d.ts"
+    "nodes/IbmiMapepire/lib/execute.ts"
+  ],
+  "files": [
+    "node_modules/.ibmi-mapepire-offline-types/node-globals.d.ts"
   ]
 }

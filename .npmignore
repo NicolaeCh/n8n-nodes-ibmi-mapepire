@@ -8,3 +8,5 @@ examples/
 tsconfig*.json
 eslint.config.mjs
 .prettierrc.js
+dist/**/*.d.ts
+dist/**/*.map

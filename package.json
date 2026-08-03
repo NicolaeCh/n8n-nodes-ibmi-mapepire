@@ -1,77 +1,87 @@
 {
-  "name": "n8n-nodes-ibmi-mapepire",
-  "version": "0.1.4",
-  "description": "Secure n8n community node for Db2 for IBM i using the official Mapepire Node.js client",
-  "license": "MIT",
-  "homepage": "https://github.com/NicolaeCh/n8n-nodes-ibmi-mapepire#readme",
-  "keywords": [
-    "n8n-community-node-package",
-    "n8n",
-    "ibm-i",
-    "ibmi",
-    "db2-for-i",
-    "mapepire",
-    "sql"
-  ],
-  "author": {
-    "name": "Nicolae Chirea",
-    "email": "NicolaeCh@users.noreply.github.com"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/NicolaeCh/n8n-nodes-ibmi-mapepire.git"
-  },
-  "bugs": {
-    "url": "https://github.com/NicolaeCh/n8n-nodes-ibmi-mapepire/issues"
-  },
-  "engines": {
-    "node": ">=22.22"
-  },
-  "scripts": {
-    "build": "n8n-node build",
-    "build:watch": "tsc --watch",
-    "dev": "n8n-node dev",
-    "lint": "n8n-node lint",
-    "lint:fix": "n8n-node lint --fix",
-    "test": "npm run test:unit",
-    "verify:types": "tsc -p tsconfig.verify.json --noEmit",
-    "verify:package": "node tools/verify-package.mjs",
-    "verify": "npm run test && npm run verify:types && npm run verify:package",
-    "release": "n8n-node release",
-    "prepublishOnly": "n8n-node prerelease",
-    "build:offline": "rm -rf dist && tsc -p tsconfig.offline-build.json && mkdir -p dist/nodes/IbmiMapepire && cp nodes/IbmiMapepire/ibmi-mapepire-light.svg nodes/IbmiMapepire/ibmi-mapepire-dark.svg dist/nodes/IbmiMapepire/",
-    "pack:offline": "npm run build:offline && npm pack --ignore-scripts",
-    "test:unit": "rm -rf .test-dist && tsc -p tsconfig.test.json && mkdir -p .test-dist/node_modules/@ibm/mapepire-js .test-dist/node_modules/n8n-workflow && cp test/fakes/mapepire-js/index.js .test-dist/node_modules/@ibm/mapepire-js/index.js && cp test/fakes/n8n-workflow/index.js .test-dist/node_modules/n8n-workflow/index.js && node --test test/*.test.cjs",
-    "verify:cli": "node tools/verify-node-cli-version.mjs",
-    "prelint": "npm run verify:cli",
-    "prebuild": "npm run verify:cli",
-    "predev": "npm run verify:cli"
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE.md",
-    "NOTICE"
-  ],
-  "n8n": {
-    "n8nNodesApiVersion": 1,
-    "strict": true,
-    "credentials": [
-      "dist/credentials/IbmiMapepireApi.credentials.js"
-    ],
-    "nodes": [
-      "dist/nodes/IbmiMapepire/IbmiMapepire.node.js"
-    ]
-  },
-  "devDependencies": {
-    "@n8n/node-cli": "0.41.2",
-    "eslint": "9.39.4",
-    "prettier": "3.8.3",
-    "release-it": "20.2.0",
-    "typescript": "5.9.3"
-  },
-  "peerDependencies": {
-    "@ibm/mapepire-js": "0.6.1",
-    "n8n-workflow": "*"
-  }
+	"name": "n8n-nodes-ibmi-mapepire",
+	"version": "0.2.0",
+	"description": "Secure n8n community node for Db2 for IBM i using the official Mapepire Node.js client",
+	"license": "MIT",
+	"homepage": "https://github.com/NicolaeCh/n8n-nodes-ibmi-mapepire#readme",
+	"keywords": [
+		"n8n-community-node-package",
+		"n8n",
+		"ibm-i",
+		"ibmi",
+		"db2-for-i",
+		"mapepire",
+		"sql"
+	],
+	"author": {
+		"name": "Nicolae Chirea",
+		"email": "NicolaeCh@users.noreply.github.com"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/NicolaeCh/n8n-nodes-ibmi-mapepire.git"
+	},
+	"bugs": {
+		"url": "https://github.com/NicolaeCh/n8n-nodes-ibmi-mapepire/issues"
+	},
+	"scripts": {
+		"audit:bundled-runtime": "node tools/audit-bundled-runtime.mjs",
+		"audit:toolchain": "npm audit --include=dev --omit=peer --audit-level=high",
+		"build": "n8n-node build",
+		"build:offline": "rm -rf dist && tsc -p tsconfig.offline-build.json && mkdir -p dist/nodes/IbmiMapepire && cp nodes/IbmiMapepire/ibmi-mapepire-light.svg nodes/IbmiMapepire/ibmi-mapepire-dark.svg dist/nodes/IbmiMapepire/",
+		"build:watch": "tsc --watch",
+		"ci:verify": "npm run verify:toolchain && npm run audit:toolchain && npm run audit:bundled-runtime && npm run lint && npm run build && npm test && npm run verify:types && npm run verify:package && npm run audit:package && npm pack --dry-run",
+		"clean": "rm -rf dist .test-dist release",
+		"dev": "n8n-node dev",
+		"lint": "n8n-node lint",
+		"lint:fix": "n8n-node lint --fix",
+		"postbuild": "node tools/vendor-mapepire.mjs",
+		"prebuild": "npm run verify:toolchain",
+		"prebuild:offline": "npm run prepare:offline-types",
+		"predev": "npm run verify:toolchain",
+		"prelint": "npm run verify:toolchain",
+		"prepare:offline-types": "node tools/generate-offline-types.mjs",
+		"prepublishOnly": "npm run release:verify",
+		"pretest:unit": "npm run prepare:offline-types",
+		"preverify:types": "npm run prepare:offline-types",
+		"release": "n8n-node release",
+		"release:build": "sh scripts/build-release.sh",
+		"release:verify": "npm run ci:verify",
+		"test": "npm run test:unit",
+		"test:unit": "rm -rf .test-dist && tsc -p tsconfig.test.json && mkdir -p .test-dist/vendor .test-dist/node_modules/n8n-workflow && cp test/fakes/mapepire-js/index.js .test-dist/vendor/mapepire-js.cjs && cp test/fakes/n8n-workflow/index.js .test-dist/node_modules/n8n-workflow/index.js && node --test test/*.test.cjs",
+		"verify": "npm run test && npm run verify:types && npm run verify:source",
+		"verify:package": "node tools/verify-package.mjs --dist-required",
+		"verify:source": "node tools/verify-package.mjs",
+		"verify:toolchain": "node tools/verify-node-cli-version.mjs",
+		"verify:types": "tsc -p tsconfig.verify.json --noEmit",
+		"audit:package": "npm audit --omit=dev --omit=peer --audit-level=high"
+	},
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE.md",
+		"NOTICE"
+	],
+	"n8n": {
+		"n8nNodesApiVersion": 1,
+		"strict": false,
+		"credentials": [
+			"dist/credentials/IbmiMapepireApi.credentials.js"
+		],
+		"nodes": [
+			"dist/nodes/IbmiMapepire/IbmiMapepire.node.js"
+		]
+	},
+	"devDependencies": {
+		"@ibm/mapepire-js": "0.6.1",
+		"@n8n/node-cli": "0.41.2",
+		"@types/node": "22.18.0",
+		"eslint": "9.39.4",
+		"prettier": "3.8.3",
+		"release-it": "20.2.0",
+		"typescript": "5.9.3"
+	},
+	"peerDependencies": {
+		"n8n-workflow": "*"
+	}
 }

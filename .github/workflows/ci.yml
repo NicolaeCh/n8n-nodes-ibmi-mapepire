@@ -9,15 +9,22 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22.22.0, 24, 26]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22.22.0
-      - run: npm install
-      - run: npm run verify
-      - run: npm run lint
-      - run: npm run build
-      - run: npm pack --dry-run
+          node-version: ${{ matrix.node-version }}
+      - name: Install exact development toolchain
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --no-fund
+          else
+            npm install --no-audit --no-fund
+          fi
+      - run: npm run ci:verify

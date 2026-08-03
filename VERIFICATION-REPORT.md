@@ -1,131 +1,114 @@
-# Verification report — 0.1.4
+# Verification report — 0.2.0
 
 Date: 2026-08-03
 
-## Scope
+## Root causes corrected
 
-The project implements an n8n community node for Db2 for IBM i with the official
-`@ibm/mapepire-js` client and the policy rules recovered from the referenced
-`ibmi-n8n-sql-container` project context.
+The earlier releases had four structural problems:
 
-The private ChatGPT project URL itself redirected to authentication and could
-not be exported from this execution environment. The implementation therefore
-uses the established project rules and exact environment-variable names already
-available in the project conversation context. This limitation is explicit so a
-maintainer can compare against the original repository before publication.
+1. stale `node_modules`/lock data selected `@n8n/node-cli` 0.20.0 instead of
+   0.41.2, causing contradictory lint rules and vulnerable old toolchain
+   dependencies;
+2. the ESLint file did not reliably extend the official n8n configuration;
+3. Mapepire was declared as a normal or peer runtime dependency, both of which
+   conflict with current community-package lint rules;
+4. development-only audit findings were being confused with code shipped to
+   the n8n runtime.
 
-## Source/API verification
+Version 0.2.0 resolves these by requiring a clean exact toolchain, extending the
+official ESLint configuration, embedding the official Mapepire 0.6.1 bundle at
+build time, and auditing development and distributed runtime surfaces
+separately.
 
-- Exact required peer dependency pinned to `@ibm/mapepire-js` 0.6.1; normal runtime `dependencies` is absent.
-- Pool creation, `Pool.query`, cursor `execute`/`fetchMore`/`close`,
-  `Pool.execute`, scalar/batch bindings, TLS CA, `rejectUnauthorized`, JDBC
-  options, and default port 8076 were checked against the published Mapepire
-  package/source documentation.
-- n8n package metadata, node and credential entry points, community keyword,
-  environment-managed package variables, checksum behavior, and current
-  verified-node external-dependency restriction were checked against current
-  n8n documentation.
+## Packaging architecture
 
-## Automated result
+The source package has no `dependencies` field and declares only:
+
+```json
+"peerDependencies": {
+  "n8n-workflow": "*"
+}
+```
+
+`@ibm/mapepire-js@0.6.1` is an exact development input. `postbuild` verifies its
+version and Apache-2.0 license, copies its official prebuilt CommonJS bundle to:
 
 ```text
-30 tests passed
-TypeScript verification passed
-Package metadata verification passed
-Production compilation passed
-Packed node/credential entry-point smoke load passed
+dist/nodes/IbmiMapepire/lib/vendor/mapepire-js.cjs
 ```
 
-Covered areas:
+and copies its license plus a SHA-256/size manifest to:
 
-- all former credential variables and defaults
-- CA path loading and conflicting CA-source rejection
-- exact read/write/function policy semantics
-- comments/multi-statements/forbidden verbs
-- qualified object enforcement
-- schema-qualified routine/table-function rejection
-- dangerous function denylist
-- INSERT/UPDATE/CREATE restrictions
-- top-level WHERE protection
-- parameter and batch limits
-- Mapepire pool/TLS/JDBC construction
-- paging, truncation, cursor close
-- SELECT transport retry
-- no write retry
-- pool-disabled lifecycle
-- semaphore behavior
-
-## Build verification
-
-The TypeScript sources compile through the included offline type harness, the
-package can be assembled with `npm run pack:offline`, and the packed node and
-credential entry points were loaded successfully with controlled module doubles.
-The harness mirrors the
-published Mapepire 0.6.1 signatures used by the node.
-
-The current build environment uses a restricted npm mirror that does not expose `@n8n/node-cli` 0.41.2 and had no live
-IBM i/Mapepire endpoint. Therefore the following remain release gates:
-
-1. Run `npm install`, `npm run lint`, `npm run build`, and `npm pack --dry-run`
-   on a connected development host. The exact 16 errors and one warning reported
-   by `n8n-node lint` 0.41.2 were patched, but the official linter could not be
-   rerun inside this restricted mirror.
-2. Live TLS and SQL integration matrix from `docs/TESTING.md` against a
-   non-production IBM i schema.
-3. Comparison of the final variable/rule table with the original private
-   project files.
-4. First npm publication and verification of the generated SHA-512 integrity.
-
-No claim of live IBM i certification is made by this report.
-
-## n8n CLI 0.41.2 compatibility fix
-
-The node description imports and uses the runtime `NodeConnectionTypes` constant:
-
-```ts
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
-
-inputs: [NodeConnectionTypes.Main],
-outputs: [NodeConnectionTypes.Main],
+```text
+dist/vendor-licenses/
 ```
 
-The package verifier now rejects the obsolete runtime use of
-`NodeConnectionType.Main`, preventing recurrence of TypeScript error TS2693.
-The development dependency is pinned to `@n8n/node-cli` 0.41.2.
+The compiled node loads that relative file and has no runtime
+`require('@ibm/mapepire-js')`.
 
-## Node.js 26 compatibility correction
+## Verification completed in this environment
 
-The package engine range is now `>=22.22`, aligned with n8n 2.31.6. The prior
-`<25` upper bound was package metadata only and incorrectly rejected or warned
-on the Node.js 26 runtime used by the target n8n container.
+The following checks were executed successfully against the corrected source:
 
+- source/package policy verifier
+- TypeScript no-emit verification
+- offline production TypeScript compilation
+- compiled runtime inspection confirming the relative Mapepire load path
+- removal of every source-level import from `@ibm/mapepire-js`; a local minimal API contract is used only for TypeScript checking
+- 31/31 automated tests
+- distinct light/dark icon verification
+- credential/environment mapping verification
+- SQL allowlist and denial-policy verification
+- Mapepire pool option verification
+- paging and truncation verification
+- SELECT one-retry and write no-retry verification
+- failed pool initialization eviction/recovery verification
+- package script and lifecycle-policy inspection
+- release-pipeline simulation through vendoring, manifest validation, npm packing, tarball extraction, and compiled entry-point loading
+- tarball content validation confirming that TypeScript sources, declarations, source maps, tests, tools, and development dependencies are excluded
 
-## n8n-node lint 0.41.2 corrections
+## Connected release gates
 
-Version 0.1.3 added a credential test via `testedBy`, node and credential icons,
-the required credential API display name, protected CA-certificate input, an
-explicit `usableAsTool: false` decision, final punctuation, `NodeOperationError`
-wrapping, complete author metadata, and an empty runtime `dependencies` set.
-The Mapepire client is now an exact required peer dependency. The node is not
-exposed as an AI tool because it includes controlled write operations.
+This execution environment cannot access the npm registry from the local build
+container, so it cannot honestly claim to have run the official
+`@n8n/node-cli@0.41.2` binary, `npm audit`, or copied the actual npm Mapepire
+bundle into a final tarball here.
 
-CI and publish workflows use Node.js 22.22, matching the package engine.
+The release-pipeline simulation used a synthetic stand-in bundle only to exercise packaging mechanics; it was deleted afterward and is not shipped. The supplied `npm run release:build` command is therefore the definitive connected gate that installs and embeds the real npm artifact. It fails immediately on any of the following:
 
+- CLI version other than 0.41.2
+- high/critical development audit finding
+- high/critical isolated Mapepire dependency finding
+- n8n lint error or warning treated as an error
+- n8n build failure
+- failed automated test or type check
+- missing/truncated/wrong-version Mapepire bundle
+- missing Apache license or manifest
+- external Mapepire runtime import remaining in compiled output
+- runtime dependency in the npm tarball
+- unexpected tarball structure
+- a tarball whose compiled node or credential class cannot be loaded
+- a mismatch between the verified tarball and the artifact selected for GitHub/npm publication
+- a Mapepire manifest whose size or SHA-256 does not match the embedded file
 
-## CLI installation and lint correction in 0.1.4
+Do not publish until this exact command succeeds in a connected clean checkout:
 
-The reported lint run identified `n8n-node lint v0.20.0`, although this project
-pins `@n8n/node-cli` 0.41.2. This indicates that the development directory
-retained an older `node_modules` tree or `package-lock.json`. Version 0.1.4 adds
-`tools/verify-node-cli-version.mjs` as the `prelint`, `prebuild`, and `predev`
-guard so the project stops with a precise cleanup command before an obsolete
-lint ruleset can report contradictory punctuation findings.
+```bash
+npm run release:build
+```
 
-The source also now uses different `ibmi-mapepire-light.svg` and
-`ibmi-mapepire-dark.svg` files. Offline type declarations are ignored by ESLint
-and have also been rewritten without an empty interface or explicit `any`.
+## Viability conclusion
 
-`npm audit fix --force` is not a supported build step: it can replace direct
-development dependencies outside the pinned toolchain. Audit the deployable
-surface with `npm audit --omit=dev`; the published tarball excludes all
-`devDependencies`.
+The corrected architecture is viable for self-hosted n8n:
+
+- it uses the official Mapepire client API and bundle;
+- it complies with the no-runtime-dependencies community package structure;
+- it does not require Mapepire to be installed beside n8n;
+- it preserves third-party license obligations;
+- it keeps all original SQL restrictions;
+- it has deterministic failure behavior for reads and writes;
+- it provides reproducible connected lint/build/audit/package gates.
+
+A live IBM i integration matrix remains mandatory before the first public npm
+release. Automated mocks cannot prove TLS, authentication, IBM i authority,
+Mapepire daemon compatibility, or commit ambiguity after a real network loss.

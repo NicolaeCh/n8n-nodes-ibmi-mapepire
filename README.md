@@ -1,164 +1,195 @@
 # n8n-nodes-ibmi-mapepire
 
-A policy-controlled n8n community node for **Db2 for IBM i** that connects
-directly through the official `@ibm/mapepire-js` Node.js client.
+A policy-controlled n8n community node for **Db2 for IBM i** using the official
+Mapepire Node.js client.
 
-The package implements the connection settings and SQL restrictions of the
-`ibmi-n8n-sql-container` project without its intermediate HTTP service. The
-Mapepire connection, TLS settings, pool settings, and SQL allowlists live in an
-encrypted n8n credential and can be selected when the node is added to a
-workflow.
+Version 0.2.0 changes the packaging architecture so the published community
+package has no third-party npm runtime dependency. During the build,
+`@ibm/mapepire-js@0.6.1` is copied into `dist` together with its Apache-2.0
+license and a SHA-256 manifest. This satisfies the current n8n community-node
+package rules while retaining the official IBM client.
 
-## Operations
+## Supported operations
 
-The node exposes only:
+The node deliberately exposes only:
 
 - `SELECT`
 - `INSERT ... VALUES`
 - `UPDATE`
 - restricted `CREATE TABLE`
 
-There is no generic “execute SQL” operation.
+There is no unrestricted “execute SQL” operation.
 
 ## Security policy
 
-Always enforced:
+The node enforces the rules from the original IBM i SQL container project:
 
-- exactly one statement; comments and semicolons are rejected
-- operation and leading SQL verb must match
-- table/view names after `FROM`, `JOIN`, `INSERT INTO`, `UPDATE`, and
-  `CREATE TABLE` must use `SCHEMA.OBJECT`
-- reads are limited by `SQL_ALLOWED_READ_SCHEMAS`
-- all writes and table creation are limited to the single
-  `SQL_ALLOWED_WRITE_SCHEMA`; blank disables writes
-- parenthesized SQL functions must be unqualified and listed in
-  `SQL_ALLOWED_FUNCTIONS`
-- every schema-qualified routine and every SQL table function is rejected
+- one statement only; comments and semicolons are rejected
+- the selected operation must match the first SQL verb
+- all tables and views must be written as `SCHEMA.OBJECT`
+- reads are limited to `SQL_ALLOWED_READ_SCHEMAS`
+- writes are limited to one `SQL_ALLOWED_WRITE_SCHEMA`; blank disables writes
+- parenthesized functions must be unqualified and explicitly allowlisted
+- schema-qualified routines and SQL table functions are rejected
 - dangerous functions such as `QCMDEXC`, IFS writes, HTTP writes, and email
-  functions are rejected even if listed
-- `DELETE`, `MERGE`, `DROP`, `ALTER`, `TRUNCATE`, `CALL`, `GRANT`, `REVOKE`,
+  functions are rejected even when allowlisted
+- `DELETE`, `MERGE`, `ALTER`, `DROP`, `TRUNCATE`, `CALL`, `GRANT`, `REVOKE`,
   transaction control, dynamic SQL, and command execution are rejected
-- `INSERT ... SELECT`, CTE-based insert, `SELECT INTO`, and data-change table
+- `INSERT ... SELECT`, CTE-based INSERT, `SELECT INTO`, and data-change table
   references are rejected
-- `UPDATE` needs a top-level `WHERE`, unless a visible per-node override is set
-- `CREATE TABLE` accepts explicit base-table definitions and identity columns;
-  CTAS, `LIKE`, foreign references, generated expressions, definition reads,
-  routines, and trailing table options are rejected
+- `UPDATE` requires a top-level `WHERE`, unless the visible full-table override
+  is deliberately enabled
+- `CREATE TABLE` permits explicit columns, identity columns, primary keys, and
+  unique constraints, while rejecting CTAS, `LIKE`, foreign references,
+  generated expressions, table functions, and trailing physical options
 - protected IBM system schemas can never be write targets
-- placeholder count and scalar/batch parameters are validated before execution
+- placeholder count, scalar parameters, and batch size are validated
 
-Writes are **never retried** after a transport failure because Db2 may already
-have committed. A `SELECT` can be retried once after recreating its pool.
+Writes are never retried after a transport failure because Db2 may already have
+committed. A `SELECT` may be retried once after invalidating its process-local
+pool.
 
 The SQL validator is defence in depth. Use a dedicated IBM i profile with only
-the required object authorities.
+the object authorities required by the workflow.
 
 ## Requirements
 
 - self-hosted n8n with community packages enabled
-- Mapepire server reachable from the n8n runtime; default port `8076`
-- an IBM i profile with least privilege
-- Node.js 22.22 or newer at runtime, aligned with n8n 2.31.6; Node.js 26 is supported by the package metadata
+- a Mapepire server reachable from n8n, normally on TCP port `8076`
+- an IBM i user profile with least privilege
+- a Node.js runtime supported by the installed n8n release
 
-The official Mapepire client is declared as the exact required peer dependency
-`@ibm/mapepire-js@0.6.1`. The package is an **unverified self-hosted community
-node** under the current n8n verified-node rules because it depends on an
-external runtime package. It is not presented as an n8n Cloud verified node.
+The package is designed for self-hosted n8n and sets `n8n.strict=false` because
+it optionally reads a CA certificate from a local container path. It is not
+presented as an n8n Cloud verified node.
 
-## Install from npm
+## Credential mapping
 
-After publication, open **Settings → Community Nodes → Install**, enter:
-
-```text
-n8n-nodes-ibmi-mapepire
-```
-
-Accept the unverified community package warning and restart n8n when required.
-
-For n8n 2.21 or newer, declarative installation is supported:
-
-```yaml
-environment:
-  N8N_COMMUNITY_PACKAGES_ENABLED: "true"
-  N8N_UNVERIFIED_PACKAGES_ENABLED: "true"
-  N8N_COMMUNITY_PACKAGES_MANAGED_BY_ENV: "true"
-  N8N_COMMUNITY_PACKAGES: >-
-    [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.4"}]
-```
-
-For stricter supply-chain control, replace the broad unverified-package switch
-with the published SHA-512 npm checksum:
-
-```yaml
-N8N_UNVERIFIED_PACKAGES_ENABLED: "false"
-N8N_COMMUNITY_PACKAGES: >-
-  [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.4","checksum":"sha512-..."}]
-```
-
-The environment-managed list is the complete desired package set; omitted
-packages are removed. Persist `/home/node/.n8n`.
-
-## Install the supplied tarball
-
-The release ZIP includes `n8n-nodes-ibmi-mapepire-0.1.4.tgz`:
-
-```bash
-mkdir -p /home/node/.n8n/nodes
-cd /home/node/.n8n/nodes
-npm install @ibm/mapepire-js@0.6.1 /tmp/n8n-nodes-ibmi-mapepire-0.1.4.tgz \
-  --omit=dev --no-audit --no-fund
-```
-
-Run the command as the same user that starts n8n, usually `node` in the official
-container. Installing both artifacts explicitly avoids peer-resolution differences
-between npm configurations. npm must be able to obtain `@ibm/mapepire-js@0.6.1`
-from its configured registry or cache. Restart n8n afterward.
-
-## Credential fields
-
-### Required or defaulted connection values
-
-| Former variable | Credential field | Required | Default |
-|---|---|---:|---:|
-| `MAPEPIRE_HOST` | Mapepire Host | Yes | — |
-| `MAPEPIRE_PORT` | Port | Defaulted | `8076` |
-| `MAPEPIRE_USER` | IBM i User | Yes | — |
-| `MAPEPIRE_PASSWORD` | IBM i Password | Yes | — |
-| `MAPEPIRE_DATABASE` | Database | Defaulted | `*LOCAL` |
-| `SQL_ALLOWED_READ_SCHEMAS` | Allowed Read Schemas | Yes | — |
-
-### Optional policy, TLS, and pool values
-
-| Former variable | Credential field | Default / behavior |
+| Former environment variable | Credential field | Required/default |
 |---|---|---|
+| `MAPEPIRE_HOST` | Mapepire Host | Required |
+| `MAPEPIRE_PORT` | Port | `8076` |
+| `MAPEPIRE_USER` | IBM i User | Required |
+| `MAPEPIRE_PASSWORD` | IBM i Password | Required |
+| `MAPEPIRE_DATABASE` | Database | `*LOCAL` |
 | `MAPEPIRE_IGNORE_UNAUTHORIZED` | Ignore Unauthorized TLS Certificates | `false` |
-| `MAPEPIRE_CA_PATH` | CA Certificate Path | blank; server/container path |
-| — | CA Certificate PEM | blank; alternative to CA path |
-| `SQL_ALLOWED_WRITE_SCHEMA` | Allowed Write Schema | blank disables INSERT, UPDATE, CREATE TABLE |
-| `SQL_ALLOWED_FUNCTIONS` | Allowed SQL Functions | blank allows no parenthesized functions |
+| `MAPEPIRE_CA_PATH` | CA Certificate Path | Optional |
+| — | CA Certificate PEM | Optional alternative to CA path |
+| `SQL_ALLOWED_READ_SCHEMAS` | Allowed Read Schemas | Required |
+| `SQL_ALLOWED_WRITE_SCHEMA` | Allowed Write Schema | Blank disables writes |
+| `SQL_ALLOWED_FUNCTIONS` | Allowed SQL Functions | Blank allows none |
 | `MAPEPIRE_POOL_ENABLED` | Enable Pool | `true` |
 | `MAPEPIRE_POOL_SIZE` | Pool Size | `4` |
 | `MAPEPIRE_POOL_WAIT_SECONDS` | Pool Wait Seconds | `30` |
 | `MAPEPIRE_QUERY_TRACE_ENABLED` | Enable Mapepire Query Trace | `false` |
-| `MAPEPIRE_SLOW_QUERY_MS` | Slow Query Threshold | `750` ms; `0` disables marker |
+| `MAPEPIRE_SLOW_QUERY_MS` | Slow Query Threshold | `750` ms |
 
-The credential also contains node-specific safety controls: maximum SELECT rows,
-fetch page size, maximum batch rows, read-only retry, date format, and decimal
-separator.
+The credential also defines maximum SELECT rows, page size, maximum batch rows,
+SELECT retry behavior, date format, and decimal separator.
 
-`X_API_KEY` is intentionally absent. It protected the former REST endpoint; the
-direct node exposes no HTTP API. n8n login/project permissions, encrypted
-credential permissions, and IBM i authority form the access boundary.
+`X_API_KEY` is intentionally absent. It protected the previous HTTP service;
+the direct node exposes no HTTP API. n8n authentication, encrypted credential
+permissions, and IBM i authority now form the access boundary.
 
-## Usage
+## Clean build and complete verification
 
-### SELECT
+Always extract the release into a new directory. Do not reuse an old
+`node_modules` directory or lock file.
 
-Credential:
+```bash
+npm run release:build
+```
+
+On the first connected build, the script uses `npm install` and generates
+`package-lock.json`. Commit that lock file before enabling GitHub CI. Subsequent
+runs use `npm ci` automatically.
+
+To deliberately regenerate the lock file:
+
+```bash
+RESET_LOCKFILE=1 npm run release:build
+```
+
+The release command performs:
+
+1. exact `@n8n/node-cli` 0.41.2 verification
+2. high/critical audit of the development toolchain
+3. isolated audit of `@ibm/mapepire-js@0.6.1`
+4. official `n8n-node lint`
+5. official `n8n-node build`
+6. 31 automated policy and execution tests
+7. TypeScript verification
+8. built-package policy and vendor-manifest verification
+9. production-package audit excluding the host-provided peer
+10. npm tarball creation, content inspection, checksum verification, and compiled entry-point smoke loading
+
+The outputs are:
 
 ```text
-SQL_ALLOWED_READ_SCHEMAS=APPDATA
-SQL_ALLOWED_FUNCTIONS=UPPER
+release/n8n-nodes-ibmi-mapepire-0.2.0.tgz
+release/n8n-nodes-ibmi-mapepire-0.2.0.tgz.sha256
+```
+
+Do not run `npm audit fix --force`. It can replace the pinned n8n CLI or alter
+the reviewed Mapepire version. Update dependencies deliberately and rerun the
+complete release pipeline.
+
+## Test the tarball in an existing Podman n8n container
+
+Copy the built tarball:
+
+```bash
+podman cp \
+  release/n8n-nodes-ibmi-mapepire-0.2.0.tgz \
+  n8n:/tmp/n8n-nodes-ibmi-mapepire-0.2.0.tgz
+```
+
+Install it as the same user that runs n8n:
+
+```bash
+podman exec -u node n8n sh -lc '
+  set -eu
+  mkdir -p /home/node/.n8n/nodes
+  cd /home/node/.n8n/nodes
+  [ -f package.json ] || npm init -y >/dev/null
+  npm uninstall n8n-nodes-ibmi-mapepire --no-audit --no-fund || true
+  npm install /tmp/n8n-nodes-ibmi-mapepire-0.2.0.tgz \
+    --omit=dev --no-audit --no-fund
+'
+
+podman restart n8n
+```
+
+No separate `@ibm/mapepire-js` installation is needed. The official client is
+already present inside the node tarball.
+
+Verify the installed package:
+
+```bash
+podman exec -u node n8n node -e '
+const p = require("/home/node/.n8n/nodes/node_modules/n8n-nodes-ibmi-mapepire/package.json");
+console.log(p.name, p.version, p.dependencies, p.peerDependencies);
+'
+```
+
+Expected package metadata:
+
+```text
+n8n-nodes-ibmi-mapepire 0.2.0 undefined { n8n-workflow: '*' }
+```
+
+Search for **IBM i Db2 (Mapepire)** in the editor, create an **IBM I Mapepire
+API** credential, test the connection, and begin with a read-only credential by
+leaving the write schema blank.
+
+## Example SELECT
+
+Credential policy:
+
+```text
+Allowed Read Schemas: SYSIBM,APPDATA
+Allowed Write Schema: <blank>
+Allowed SQL Functions: UPPER
 ```
 
 SQL:
@@ -175,88 +206,33 @@ Parameters:
 [123]
 ```
 
-### Batch INSERT
+## Publishing
 
-```sql
-INSERT INTO APPDATA.EVENTS (EVENT_ID, EVENT_TEXT) VALUES (?, ?)
-```
-
-```json
-[
-  [1001, "Started"],
-  [1002, "Completed"]
-]
-```
-
-### UPDATE
-
-```sql
-UPDATE APPDATA.EVENTS
-SET EVENT_TEXT = ?
-WHERE EVENT_ID = ?
-```
-
-```json
-["Acknowledged", 1001]
-```
-
-### Restricted CREATE TABLE
-
-```sql
-CREATE TABLE APPDATA.N8N_EVENTS (
-  EVENT_ID BIGINT GENERATED ALWAYS AS IDENTITY,
-  EVENT_TEXT VARCHAR(1024),
-  CREATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (EVENT_ID)
-)
-```
-
-## Build and verify
+After `npm run release:build` succeeds and the generated lock file is committed, publish the exact verified tarball:
 
 ```bash
-npm install
-npm run verify
-npm run lint
-npm run build
-npm pack --dry-run
+npm publish release/n8n-nodes-ibmi-mapepire-0.2.0.tgz \
+  --provenance --access public
 ```
 
-The supplied offline verification harness checks the policy engine, credential
-mapping, Mapepire pool and paging calls, read retry, write no-retry behavior,
-pool-disabled mode, TypeScript compilation, and package metadata. A live
-integration test still requires a reachable non-production IBM i Mapepire
-server.
+The package can then be installed from **Settings → Community Nodes** using:
 
-See `docs/` for architecture, exact rules, migration, testing, installation, and
-GitHub/npm publication.
+```text
+n8n-nodes-ibmi-mapepire
+```
+
+See `docs/PUBLISHING.md` for GitHub Actions and npm trusted publishing.
+
+## Verification scope
+
+The included automated suite validates the SQL policy, configuration mapping,
+pool construction, paging, truncation, SELECT retry, write no-retry behavior,
+pool-disabled behavior, batch parameters, failed-pool recovery, queue timeout,
+and package structure. Final certification still requires a live disposable
+IBM i schema and reachable Mapepire server; see `docs/TESTING.md`.
 
 ## License
 
-MIT. `@ibm/mapepire-js` is Apache-2.0; see `NOTICE`.
-
-
-### Clean development toolchain
-
-This release pins `@n8n/node-cli` to `0.41.2`. Before linting a directory that
-previously contained another release, remove the old dependency tree and lock
-file:
-
-```bash
-rm -rf node_modules package-lock.json
-npm install
-npm exec -- n8n-node --version
-```
-
-The last command must report `0.41.2`. `npm run lint`, `npm run build`, and
-`npm run dev` now perform this check automatically.
-
-Do not use `npm audit fix --force` on the development project. It can replace
-pinned build tools with incompatible versions. To evaluate vulnerabilities that
-can affect a production installation, use:
-
-```bash
-npm audit --omit=dev
-```
-
-The npm tarball does not contain the CLI, ESLint, Handlebars, or other
-development-only packages.
+This project is MIT licensed. The bundled `@ibm/mapepire-js` runtime is
+Apache-2.0 licensed; its license and bundle manifest are included in the built
+package under `dist/vendor-licenses`.

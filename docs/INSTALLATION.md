@@ -1,123 +1,87 @@
 # Installation
 
-## Published npm package
+## Build the local tarball
 
-This is an unverified community package for self-hosted n8n. After publication:
-
-1. Open **Settings → Community Nodes**.
-2. Select **Install**.
-3. Enter `n8n-nodes-ibmi-mapepire`.
-4. Review and accept the unverified-package warning.
-5. Restart n8n when the deployment does not reload community nodes automatically.
-
-The package declares `@ibm/mapepire-js@0.6.1` as an exact required peer
-dependency. Modern npm resolves it during normal package installation. The n8n
-host/container therefore needs registry access, or a registry/cache that already
-contains both packages.
-
-## Environment-managed installation: n8n 2.21+
-
-```yaml
-services:
-  n8n:
-    environment:
-      N8N_COMMUNITY_PACKAGES_ENABLED: "true"
-      N8N_UNVERIFIED_PACKAGES_ENABLED: "true"
-      N8N_COMMUNITY_PACKAGES_MANAGED_BY_ENV: "true"
-      N8N_COMMUNITY_PACKAGES: >-
-        [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.4"}]
-    volumes:
-      - n8n_data:/home/node/.n8n
-```
-
-`N8N_COMMUNITY_PACKAGES` is the complete desired state. When environment
-management is enabled, n8n installs missing packages, reconciles versions, and
-removes installed packages omitted from the JSON list.
-
-For a stricter deployment, obtain the npm SHA-512 integrity value after
-publication and configure:
-
-```yaml
-N8N_UNVERIFIED_PACKAGES_ENABLED: "false"
-N8N_COMMUNITY_PACKAGES: >-
-  [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.4","checksum":"sha512-..."}]
-```
-
-The checksum requires an explicit version. In managed mode the Community Nodes
-settings page is read-only.
-
-## Supplied local tarball
+Use a fresh extraction directory:
 
 ```bash
-mkdir -p /home/node/.n8n/nodes
-cd /home/node/.n8n/nodes
-npm install @ibm/mapepire-js@0.6.1 /tmp/n8n-nodes-ibmi-mapepire-0.1.4.tgz \
-  --omit=dev --no-audit --no-fund
+npm run release:build
 ```
 
-Run this as the operating-system user that starts n8n. In the official image:
+The generated artifact is:
+
+```text
+release/n8n-nodes-ibmi-mapepire-0.2.0.tgz
+```
+
+The tarball already contains the official Mapepire 0.6.1 runtime. Do not install
+`@ibm/mapepire-js` separately in n8n.
+
+## Install in a Podman n8n container
 
 ```bash
-docker cp n8n-nodes-ibmi-mapepire-0.1.4.tgz n8n:/tmp/
-docker exec -u node n8n sh -lc \
-  'mkdir -p /home/node/.n8n/nodes && cd /home/node/.n8n/nodes && npm install @ibm/mapepire-js@0.6.1 /tmp/n8n-nodes-ibmi-mapepire-0.1.4.tgz \
-  --omit=dev --no-audit --no-fund'
-docker restart n8n
+podman cp \
+  release/n8n-nodes-ibmi-mapepire-0.2.0.tgz \
+  n8n:/tmp/n8n-nodes-ibmi-mapepire-0.2.0.tgz
+
+podman exec -u node n8n sh -lc '
+  set -eu
+  mkdir -p /home/node/.n8n/nodes
+  cd /home/node/.n8n/nodes
+  [ -f package.json ] || npm init -y >/dev/null
+  npm uninstall n8n-nodes-ibmi-mapepire --no-audit --no-fund || true
+  npm install /tmp/n8n-nodes-ibmi-mapepire-0.2.0.tgz \
+    --omit=dev --no-audit --no-fund
+'
+
+podman restart n8n
 ```
 
-Persist `/home/node/.n8n`. Podman uses equivalent `podman cp`, `podman exec`, and
-`podman restart` commands.
+Persist `/home/node/.n8n` or the corresponding n8n data volume.
 
-## Network and TLS
-
-The n8n process must resolve the configured host and reach its Mapepire TCP port,
-normally 8076. For private PKI, either:
-
-- paste the issuing CA into **CA Certificate PEM**, or
-- mount the CA file into the n8n container and set **CA Certificate Path** to
-  that in-container path.
-
-Do not set both. `MAPEPIRE_IGNORE_UNAUTHORIZED=true` is for isolated testing,
-not production.
-
-Example container mount:
-
-```yaml
-volumes:
-  - ./certs/ibmi-ca.pem:/home/node/.n8n/certs/ibmi-ca.pem:ro
-```
-
-Then configure `/home/node/.n8n/certs/ibmi-ca.pem` in the credential.
-
-## Worker sizing
-
-Pools are process-local. Four workers using pool size four can open up to 16
-Mapepire SQL jobs, plus any main/webhook processes executing the credential.
-Set IBM i and Mapepire job limits for the aggregate.
-
-
-### Clean development toolchain
-
-This release pins `@n8n/node-cli` to `0.41.2`. Before linting a directory that
-previously contained another release, remove the old dependency tree and lock
-file:
+## Verify package loading
 
 ```bash
-rm -rf node_modules package-lock.json
-npm install
-npm exec -- n8n-node --version
+podman exec -u node n8n sh -lc '
+  test -f /home/node/.n8n/nodes/node_modules/n8n-nodes-ibmi-mapepire/dist/nodes/IbmiMapepire/lib/vendor/mapepire-js.cjs
+  test -f /home/node/.n8n/nodes/node_modules/n8n-nodes-ibmi-mapepire/dist/vendor-licenses/mapepire-js-LICENSE.txt
+  npm --prefix /home/node/.n8n/nodes list n8n-nodes-ibmi-mapepire
+'
 ```
 
-The last command must report `0.41.2`. `npm run lint`, `npm run build`, and
-`npm run dev` now perform this check automatically.
-
-Do not use `npm audit fix --force` on the development project. It can replace
-pinned build tools with incompatible versions. To evaluate vulnerabilities that
-can affect a production installation, use:
+Inspect startup logs:
 
 ```bash
-npm audit --omit=dev
+podman logs --since 5m n8n 2>&1 | grep -Ei 'ibmi|mapepire|credential|community|error'
 ```
 
-The npm tarball does not contain the CLI, ESLint, Handlebars, or other
-development-only packages.
+Search for **IBM i Db2 (Mapepire)** in the node picker.
+
+## First credential test
+
+Start read-only:
+
+```text
+Allowed Read Schemas: SYSIBM
+Allowed Write Schema: <blank>
+Allowed SQL Functions: <blank>
+```
+
+Use the credential test button. It executes:
+
+```sql
+SELECT CURRENT_SERVER AS SERVER_NAME
+FROM SYSIBM.SYSDUMMY1
+```
+
+Then execute the same query in a workflow node.
+
+## Remove the local package
+
+```bash
+podman exec -u node n8n sh -lc '
+  cd /home/node/.n8n/nodes
+  npm uninstall n8n-nodes-ibmi-mapepire --no-audit --no-fund
+'
+podman restart n8n
+```
