@@ -33,6 +33,22 @@ if (pkg.peerDependencies?.['@ibm/mapepire-js'] !== '0.6.1') {
   errors.push('Mapepire client peer dependency must be pinned to 0.6.1');
 }
 
+if (pkg.devDependencies?.['@n8n/node-cli'] !== '0.41.2') {
+  errors.push('Development CLI must be pinned to @n8n/node-cli 0.41.2');
+}
+if (!nodeSource.includes("light: 'file:ibmi-mapepire-light.svg'")) {
+  errors.push('Light node icon is missing');
+}
+if (!nodeSource.includes("dark: 'file:ibmi-mapepire-dark.svg'")) {
+  errors.push('Dark node icon is missing');
+}
+const lightIcon = nodeSource.match(/light:\s*'file:([^']+)'/)?.[1];
+const darkIcon = nodeSource.match(/dark:\s*'file:([^']+)'/)?.[1];
+if (lightIcon && darkIcon && lightIcon === darkIcon) {
+  errors.push('Light and dark node icons must use different files');
+}
+
+
 if (!nodeSource.includes("import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';")) {
   errors.push('Node must import the runtime NodeConnectionTypes constant');
 }
@@ -58,7 +74,7 @@ if (!nodeSource.includes("testedBy: 'ibmiMapepireCredentialTest'")) {
 if (!credentialSource.includes("displayName = 'IBM I Mapepire API'")) {
   errors.push('Credential display name must satisfy the n8n API naming rule');
 }
-if (!credentialSource.includes("icon: Icon = 'file:../nodes/IbmiMapepire/ibmi-mapepire.svg'")) {
+if (!credentialSource.includes("icon: Icon = 'file:../nodes/IbmiMapepire/ibmi-mapepire-light.svg'")) {
   errors.push('Credential icon is missing');
 }
 if (!credentialSource.includes('typeOptions: { rows: 6, password: true }')) {

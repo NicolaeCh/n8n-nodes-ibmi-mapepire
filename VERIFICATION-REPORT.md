@@ -1,4 +1,4 @@
-# Verification report — 0.1.3
+# Verification report — 0.1.4
 
 Date: 2026-08-03
 
@@ -102,11 +102,30 @@ on the Node.js 26 runtime used by the target n8n container.
 
 ## n8n-node lint 0.41.2 corrections
 
-Version 0.1.3 adds a credential test via `testedBy`, node and credential icons,
+Version 0.1.3 added a credential test via `testedBy`, node and credential icons,
 the required credential API display name, protected CA-certificate input, an
 explicit `usableAsTool: false` decision, final punctuation, `NodeOperationError`
 wrapping, complete author metadata, and an empty runtime `dependencies` set.
 The Mapepire client is now an exact required peer dependency. The node is not
 exposed as an AI tool because it includes controlled write operations.
 
-CI and publish workflows now use Node.js 22.22, matching the package engine.
+CI and publish workflows use Node.js 22.22, matching the package engine.
+
+
+## CLI installation and lint correction in 0.1.4
+
+The reported lint run identified `n8n-node lint v0.20.0`, although this project
+pins `@n8n/node-cli` 0.41.2. This indicates that the development directory
+retained an older `node_modules` tree or `package-lock.json`. Version 0.1.4 adds
+`tools/verify-node-cli-version.mjs` as the `prelint`, `prebuild`, and `predev`
+guard so the project stops with a precise cleanup command before an obsolete
+lint ruleset can report contradictory punctuation findings.
+
+The source also now uses different `ibmi-mapepire-light.svg` and
+`ibmi-mapepire-dark.svg` files. Offline type declarations are ignored by ESLint
+and have also been rewritten without an empty interface or explicit `any`.
+
+`npm audit fix --force` is not a supported build step: it can replace direct
+development dependencies outside the pinned toolchain. Audit the deployable
+surface with `npm audit --omit=dev`; the published tarball excludes all
+`devDependencies`.

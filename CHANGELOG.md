@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.4 - 2026-08-03
+
+- Added distinct light and dark SVG files for the n8n themed icon requirement.
+- Excluded offline TypeScript declaration stubs from the community-node lint scope and made the stubs lint-safe as a fallback.
+- Added a preflight guard that requires the pinned `@n8n/node-cli` 0.41.2 before lint, build, or development commands.
+- Documented the clean reinstall required when an older `node_modules` directory or `package-lock.json` selects CLI 0.20.0.
+- Clarified that `npm audit fix --force` must not be used to mutate the development toolchain and that runtime auditing should use `npm audit --omit=dev`.
+
 ## 0.1.3 - 2026-08-03
 
 - Resolved all `@n8n/node-cli` 0.41.2 lint findings reported for credentials, icons, tool support, descriptions, error handling, package author metadata, and runtime dependencies.

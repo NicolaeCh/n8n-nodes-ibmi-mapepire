@@ -83,7 +83,7 @@ environment:
   N8N_UNVERIFIED_PACKAGES_ENABLED: "true"
   N8N_COMMUNITY_PACKAGES_MANAGED_BY_ENV: "true"
   N8N_COMMUNITY_PACKAGES: >-
-    [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.3"}]
+    [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.4"}]
 ```
 
 For stricter supply-chain control, replace the broad unverified-package switch
@@ -92,7 +92,7 @@ with the published SHA-512 npm checksum:
 ```yaml
 N8N_UNVERIFIED_PACKAGES_ENABLED: "false"
 N8N_COMMUNITY_PACKAGES: >-
-  [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.3","checksum":"sha512-..."}]
+  [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.4","checksum":"sha512-..."}]
 ```
 
 The environment-managed list is the complete desired package set; omitted
@@ -100,12 +100,12 @@ packages are removed. Persist `/home/node/.n8n`.
 
 ## Install the supplied tarball
 
-The release ZIP includes `n8n-nodes-ibmi-mapepire-0.1.3.tgz`:
+The release ZIP includes `n8n-nodes-ibmi-mapepire-0.1.4.tgz`:
 
 ```bash
 mkdir -p /home/node/.n8n/nodes
 cd /home/node/.n8n/nodes
-npm install @ibm/mapepire-js@0.6.1 /tmp/n8n-nodes-ibmi-mapepire-0.1.3.tgz \
+npm install @ibm/mapepire-js@0.6.1 /tmp/n8n-nodes-ibmi-mapepire-0.1.4.tgz \
   --omit=dev --no-audit --no-fund
 ```
 
@@ -233,3 +233,30 @@ GitHub/npm publication.
 ## License
 
 MIT. `@ibm/mapepire-js` is Apache-2.0; see `NOTICE`.
+
+
+### Clean development toolchain
+
+This release pins `@n8n/node-cli` to `0.41.2`. Before linting a directory that
+previously contained another release, remove the old dependency tree and lock
+file:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install
+npm exec -- n8n-node --version
+```
+
+The last command must report `0.41.2`. `npm run lint`, `npm run build`, and
+`npm run dev` now perform this check automatically.
+
+Do not use `npm audit fix --force` on the development project. It can replace
+pinned build tools with incompatible versions. To evaluate vulnerabilities that
+can affect a production installation, use:
+
+```bash
+npm audit --omit=dev
+```
+
+The npm tarball does not contain the CLI, ESLint, Handlebars, or other
+development-only packages.

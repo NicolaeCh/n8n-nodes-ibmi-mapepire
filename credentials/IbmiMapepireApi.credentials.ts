@@ -3,7 +3,7 @@ import type { ICredentialType, INodeProperties, Icon } from 'n8n-workflow';
 export class IbmiMapepireApi implements ICredentialType {
 	name = 'ibmiMapepireApi';
 	displayName = 'IBM I Mapepire API';
-	icon: Icon = 'file:../nodes/IbmiMapepire/ibmi-mapepire.svg';
+	icon: Icon = 'file:../nodes/IbmiMapepire/ibmi-mapepire-light.svg';
 	documentationUrl = 'https://github.com/NicolaeCh/n8n-nodes-ibmi-mapepire';
 
 	properties: INodeProperties[] = [

@@ -25,7 +25,7 @@ services:
       N8N_UNVERIFIED_PACKAGES_ENABLED: "true"
       N8N_COMMUNITY_PACKAGES_MANAGED_BY_ENV: "true"
       N8N_COMMUNITY_PACKAGES: >-
-        [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.3"}]
+        [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.4"}]
     volumes:
       - n8n_data:/home/node/.n8n
 ```
@@ -40,7 +40,7 @@ publication and configure:
 ```yaml
 N8N_UNVERIFIED_PACKAGES_ENABLED: "false"
 N8N_COMMUNITY_PACKAGES: >-
-  [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.3","checksum":"sha512-..."}]
+  [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.4","checksum":"sha512-..."}]
 ```
 
 The checksum requires an explicit version. In managed mode the Community Nodes
@@ -51,16 +51,16 @@ settings page is read-only.
 ```bash
 mkdir -p /home/node/.n8n/nodes
 cd /home/node/.n8n/nodes
-npm install @ibm/mapepire-js@0.6.1 /tmp/n8n-nodes-ibmi-mapepire-0.1.3.tgz \
+npm install @ibm/mapepire-js@0.6.1 /tmp/n8n-nodes-ibmi-mapepire-0.1.4.tgz \
   --omit=dev --no-audit --no-fund
 ```
 
 Run this as the operating-system user that starts n8n. In the official image:
 
 ```bash
-docker cp n8n-nodes-ibmi-mapepire-0.1.3.tgz n8n:/tmp/
+docker cp n8n-nodes-ibmi-mapepire-0.1.4.tgz n8n:/tmp/
 docker exec -u node n8n sh -lc \
-  'mkdir -p /home/node/.n8n/nodes && cd /home/node/.n8n/nodes && npm install @ibm/mapepire-js@0.6.1 /tmp/n8n-nodes-ibmi-mapepire-0.1.3.tgz \
+  'mkdir -p /home/node/.n8n/nodes && cd /home/node/.n8n/nodes && npm install @ibm/mapepire-js@0.6.1 /tmp/n8n-nodes-ibmi-mapepire-0.1.4.tgz \
   --omit=dev --no-audit --no-fund'
 docker restart n8n
 ```
@@ -94,3 +94,30 @@ Then configure `/home/node/.n8n/certs/ibmi-ca.pem` in the credential.
 Pools are process-local. Four workers using pool size four can open up to 16
 Mapepire SQL jobs, plus any main/webhook processes executing the credential.
 Set IBM i and Mapepire job limits for the aggregate.
+
+
+### Clean development toolchain
+
+This release pins `@n8n/node-cli` to `0.41.2`. Before linting a directory that
+previously contained another release, remove the old dependency tree and lock
+file:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install
+npm exec -- n8n-node --version
+```
+
+The last command must report `0.41.2`. `npm run lint`, `npm run build`, and
+`npm run dev` now perform this check automatically.
+
+Do not use `npm audit fix --force` on the development project. It can replace
+pinned build tools with incompatible versions. To evaluate vulnerabilities that
+can affect a production installation, use:
+
+```bash
+npm audit --omit=dev
+```
+
+The npm tarball does not contain the CLI, ESLint, Handlebars, or other
+development-only packages.

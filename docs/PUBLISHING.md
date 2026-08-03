@@ -56,7 +56,7 @@ token in the repository.
 After publication, record the exact package integrity:
 
 ```bash
-npm view n8n-nodes-ibmi-mapepire@0.1.3 dist.integrity
+npm view n8n-nodes-ibmi-mapepire@0.1.4 dist.integrity
 ```
 
 That `sha512-...` value can be used as the n8n managed-package checksum.
@@ -81,8 +81,8 @@ long-lived npm token.
 4. Create and push a matching semantic-version tag.
 
 ```bash
-git tag v0.1.3
-git push origin v0.1.3
+git tag v0.1.4
+git push origin v0.1.4
 ```
 
 The tag starts `.github/workflows/publish.yml`.

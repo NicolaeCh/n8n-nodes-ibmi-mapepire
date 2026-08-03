@@ -4,7 +4,7 @@ declare module 'n8n-workflow' {
   export interface INodeProperties { [key: string]: unknown; }
   export interface ICredentialDataDecryptedObject { [key: string]: unknown; }
   export interface ICredentialsDecrypted { data: ICredentialDataDecryptedObject; }
-  export interface ICredentialTestFunctions {}
+  export type ICredentialTestFunctions = object;
   export interface INodeCredentialTestResult { status: 'OK' | 'Error'; message: string; }
   export interface IDataObject { [key: string]: unknown; }
   export interface INode { name: string; type: string; typeVersion: number; position: [number, number]; parameters: IDataObject; }
@@ -12,7 +12,7 @@ declare module 'n8n-workflow' {
   export interface INodeTypeDescription { [key: string]: unknown; }
   export interface INodeType {
     description: INodeTypeDescription;
-    methods?: Record<string, Record<string, (...args: any[]) => unknown>>;
+    methods?: unknown;
     execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]>;
   }
   export interface IExecuteFunctions {
