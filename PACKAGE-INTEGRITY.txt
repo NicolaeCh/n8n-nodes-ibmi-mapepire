@@ -1,9 +1,9 @@
-Supplied local npm tarball: n8n-nodes-ibmi-mapepire-0.1.0.tgz
-Version: 0.1.0
-Size: 27693 bytes
-SHA-1 (npm pack): 94127be9e222a29c1251ba0142a1e901e2e70d21
-SHA-512 integrity (npm pack): sha512-uH/A97J3NeYj5vSSqmKD507eepODFqcnFO26tq7Nqahb9qrGTXUQDsxen7dcNRwDNcxiVP3wjQ5orA1vcmcBlg==
-SHA-256: 164de8c0131a826eec743f572971ef6de150e037f0e830822f2cb7f47c607702
+Supplied local npm tarball: n8n-nodes-ibmi-mapepire-0.1.1.tgz
+Version: 0.1.1
+Size: 27702 bytes
+SHA-1 (npm pack): e43ca36cb7606627ab708912875b479c7d7a95ad
+SHA-512 integrity (npm pack): sha512-+EUwrX+u++pWTV+CLem6tTbcylWxOGux0cOr7B1SuQLEOKcFGFOjTA68mawjeeRxFCEGyBSwCHEH1FQq0018Jw==
+SHA-256: 18a0809e6d47a43775b1ccc7880712dc2ee8d32f5d88791cec0c1afc5e73addf
 
 This identifies the supplied local tarball. After npm publication, retrieve the
 registry's dist.integrity and use that published value for n8n's checksum field.

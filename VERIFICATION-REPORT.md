@@ -1,4 +1,4 @@
-# Verification report — 0.1.0
+# Verification report — 0.1.1
 
 Date: 2026-08-01
 
@@ -8,6 +8,11 @@ The project implements an n8n community node for Db2 for IBM i with the official
 `@ibm/mapepire-js` client and the policy rules recovered from the referenced
 `ibmi-n8n-sql-container` project context.
 
+The private ChatGPT project URL itself redirected to authentication and could
+not be exported from this execution environment. The implementation therefore
+uses the established project rules and exact environment-variable names already
+available in the project conversation context. This limitation is explicit so a
+maintainer can compare against the original repository before publication.
 
 ## Source/API verification
 
@@ -68,3 +73,18 @@ IBM i/Mapepire endpoint. Therefore the following remain release gates:
 4. First npm publication and verification of the generated SHA-512 integrity.
 
 No claim of live IBM i certification is made by this report.
+
+## n8n CLI 0.41.2 compatibility fix
+
+The node description imports and uses the runtime `NodeConnectionTypes` constant:
+
+```ts
+import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+
+inputs: [NodeConnectionTypes.Main],
+outputs: [NodeConnectionTypes.Main],
+```
+
+The package verifier now rejects the obsolete runtime use of
+`NodeConnectionType.Main`, preventing recurrence of TypeScript error TS2693.
+The development dependency is pinned to `@n8n/node-cli` 0.41.2.

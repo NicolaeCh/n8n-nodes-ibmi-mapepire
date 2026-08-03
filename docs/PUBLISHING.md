@@ -56,7 +56,7 @@ token in the repository.
 After publication, record the exact package integrity:
 
 ```bash
-npm view n8n-nodes-ibmi-mapepire@0.1.0 dist.integrity
+npm view n8n-nodes-ibmi-mapepire@0.1.1 dist.integrity
 ```
 
 That `sha512-...` value can be used as the n8n managed-package checksum.

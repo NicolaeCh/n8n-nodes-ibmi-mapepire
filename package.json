@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-ibmi-mapepire",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Secure n8n community node for Db2 for IBM i using the official Mapepire Node.js client",
   "license": "MIT",
   "homepage": "https://github.com/NicolaeCh/n8n-nodes-ibmi-mapepire#readme",
@@ -62,7 +62,7 @@
     "@ibm/mapepire-js": "0.6.1"
   },
   "devDependencies": {
-    "@n8n/node-cli": "*",
+    "@n8n/node-cli": "0.41.2",
     "eslint": "9.39.4",
     "prettier": "3.8.3",
     "release-it": "20.2.0",

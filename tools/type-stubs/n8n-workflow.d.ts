@@ -13,7 +13,7 @@ declare module 'n8n-workflow' {
     getNode(): unknown;
     continueOnFail(): boolean;
   }
-  export enum NodeConnectionType { Main = 'main' }
+  export const NodeConnectionTypes: { readonly Main: 'main' };
   export class NodeOperationError extends Error {
     constructor(node: unknown, error: Error | string, options?: { itemIndex?: number });
   }

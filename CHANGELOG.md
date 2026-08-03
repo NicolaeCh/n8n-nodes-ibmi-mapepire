@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1 - 2026-08-03
+
+- Fixed compatibility with `@n8n/node-cli` 0.41.2 and the current `n8n-workflow` API.
+- Replaced the type-only `NodeConnectionType` symbol with the runtime `NodeConnectionTypes` constant used by the official n8n node starter.
+- Pinned `@n8n/node-cli` to 0.41.2 for reproducible builds.
+- Updated the offline type stub and release documentation.
+
 ## 0.1.0 - 2026-08-01
 
 - Initial Db2 for IBM i n8n community node using `@ibm/mapepire-js` 0.6.1.

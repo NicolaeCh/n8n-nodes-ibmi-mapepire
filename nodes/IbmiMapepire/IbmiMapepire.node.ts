@@ -5,7 +5,7 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 import { runtimeConfigFromCredentials } from './lib/config';
 import { executeSelect, executeWrite } from './lib/execute';
 import { parseAndValidateParameters, validateSql } from './lib/security';
@@ -30,8 +30,8 @@ export class IbmiMapepire implements INodeType {
 		subtitle: '={{$parameter["operation"]}}',
 		description: 'Execute policy-controlled Db2 for IBM i SQL through Mapepire',
 		defaults: { name: 'IBM i Db2 (Mapepire)' },
-		inputs: [NodeConnectionType.Main],
-		outputs: [NodeConnectionType.Main],
+		inputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionTypes.Main],
 		credentials: [{ name: 'ibmiMapepireApi', required: true }],
 		properties: [
 			{

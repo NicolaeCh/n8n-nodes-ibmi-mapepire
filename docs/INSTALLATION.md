@@ -24,7 +24,7 @@ services:
       N8N_UNVERIFIED_PACKAGES_ENABLED: "true"
       N8N_COMMUNITY_PACKAGES_MANAGED_BY_ENV: "true"
       N8N_COMMUNITY_PACKAGES: >-
-        [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.0"}]
+        [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.1"}]
     volumes:
       - n8n_data:/home/node/.n8n
 ```
@@ -39,7 +39,7 @@ publication and configure:
 ```yaml
 N8N_UNVERIFIED_PACKAGES_ENABLED: "false"
 N8N_COMMUNITY_PACKAGES: >-
-  [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.0","checksum":"sha512-..."}]
+  [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.1","checksum":"sha512-..."}]
 ```
 
 The checksum requires an explicit version. In managed mode the Community Nodes
@@ -50,15 +50,15 @@ settings page is read-only.
 ```bash
 mkdir -p /home/node/.n8n/nodes
 cd /home/node/.n8n/nodes
-npm install /tmp/n8n-nodes-ibmi-mapepire-0.1.0.tgz
+npm install /tmp/n8n-nodes-ibmi-mapepire-0.1.1.tgz
 ```
 
 Run this as the operating-system user that starts n8n. In the official image:
 
 ```bash
-docker cp n8n-nodes-ibmi-mapepire-0.1.0.tgz n8n:/tmp/
+docker cp n8n-nodes-ibmi-mapepire-0.1.1.tgz n8n:/tmp/
 docker exec -u node n8n sh -lc \
-  'mkdir -p /home/node/.n8n/nodes && cd /home/node/.n8n/nodes && npm install /tmp/n8n-nodes-ibmi-mapepire-0.1.0.tgz'
+  'mkdir -p /home/node/.n8n/nodes && cd /home/node/.n8n/nodes && npm install /tmp/n8n-nodes-ibmi-mapepire-0.1.1.tgz'
 docker restart n8n
 ```
 

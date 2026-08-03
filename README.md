@@ -83,7 +83,7 @@ environment:
   N8N_UNVERIFIED_PACKAGES_ENABLED: "true"
   N8N_COMMUNITY_PACKAGES_MANAGED_BY_ENV: "true"
   N8N_COMMUNITY_PACKAGES: >-
-    [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.0"}]
+    [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.1"}]
 ```
 
 For stricter supply-chain control, replace the broad unverified-package switch
@@ -92,7 +92,7 @@ with the published SHA-512 npm checksum:
 ```yaml
 N8N_UNVERIFIED_PACKAGES_ENABLED: "false"
 N8N_COMMUNITY_PACKAGES: >-
-  [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.0","checksum":"sha512-..."}]
+  [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.1","checksum":"sha512-..."}]
 ```
 
 The environment-managed list is the complete desired package set; omitted
@@ -100,12 +100,12 @@ packages are removed. Persist `/home/node/.n8n`.
 
 ## Install the supplied tarball
 
-The release ZIP includes `n8n-nodes-ibmi-mapepire-0.1.0.tgz`:
+The release ZIP includes `n8n-nodes-ibmi-mapepire-0.1.1.tgz`:
 
 ```bash
 mkdir -p /home/node/.n8n/nodes
 cd /home/node/.n8n/nodes
-npm install /tmp/n8n-nodes-ibmi-mapepire-0.1.0.tgz
+npm install /tmp/n8n-nodes-ibmi-mapepire-0.1.1.tgz
 ```
 
 Run the command as the same user that starts n8n, usually `node` in the official

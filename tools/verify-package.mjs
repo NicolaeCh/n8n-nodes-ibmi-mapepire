@@ -10,6 +10,10 @@ const securitySource = fs.readFileSync(
   new URL('nodes/IbmiMapepire/lib/security.ts', root),
   'utf8',
 );
+const nodeSource = fs.readFileSync(
+  new URL('nodes/IbmiMapepire/IbmiMapepire.node.ts', root),
+  'utf8',
+);
 const errors = [];
 
 if (!pkg.name.startsWith('n8n-nodes-')) errors.push('Package name must start with n8n-nodes-');
@@ -20,6 +24,19 @@ for (const file of [...(pkg.n8n?.credentials ?? []), ...(pkg.n8n?.nodes ?? [])])
 }
 if (pkg.dependencies?.['@ibm/mapepire-js'] !== '0.6.1') {
   errors.push('Mapepire client must be pinned to 0.6.1');
+}
+
+if (!nodeSource.includes("import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';")) {
+  errors.push('Node must import the runtime NodeConnectionTypes constant');
+}
+if (!nodeSource.includes('inputs: [NodeConnectionTypes.Main]')) {
+  errors.push('Node input must use NodeConnectionTypes.Main');
+}
+if (!nodeSource.includes('outputs: [NodeConnectionTypes.Main]')) {
+  errors.push('Node output must use NodeConnectionTypes.Main');
+}
+if (/\bNodeConnectionType\.Main\b/.test(nodeSource)) {
+  errors.push('Type-only NodeConnectionType must not be used as a runtime value');
 }
 
 const requiredCredentialNames = [
