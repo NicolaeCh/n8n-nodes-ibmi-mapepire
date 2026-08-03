@@ -22,6 +22,10 @@ if (pkg.license !== 'MIT') errors.push('Community package must use MIT license')
 for (const file of [...(pkg.n8n?.credentials ?? []), ...(pkg.n8n?.nodes ?? [])]) {
   if (!file.startsWith('dist/')) errors.push(`n8n entry must point to dist: ${file}`);
 }
+if (pkg.engines?.node !== '>=22.22') {
+  errors.push('Node engine must align with n8n 2.31.6 and permit Node.js 26');
+}
+
 if (pkg.dependencies?.['@ibm/mapepire-js'] !== '0.6.1') {
   errors.push('Mapepire client must be pinned to 0.6.1');
 }

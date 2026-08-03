@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2 - 2026-08-03
+
+- Align the package Node.js engine with n8n 2.31.6: `>=22.22`.
+- Allow installation and testing on the target Node.js 26.5.0 runtime.
+- Remove the incorrect `<25` upper bound from package metadata.
+
 ## 0.1.1 - 2026-08-03
 
 - Fixed compatibility with `@n8n/node-cli` 0.41.2 and the current `n8n-workflow` API.

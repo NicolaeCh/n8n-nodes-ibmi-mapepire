@@ -1,4 +1,4 @@
-# Verification report — 0.1.1
+# Verification report — 0.1.2
 
 Date: 2026-08-01
 
@@ -88,3 +88,9 @@ outputs: [NodeConnectionTypes.Main],
 The package verifier now rejects the obsolete runtime use of
 `NodeConnectionType.Main`, preventing recurrence of TypeScript error TS2693.
 The development dependency is pinned to `@n8n/node-cli` 0.41.2.
+
+## Node.js 26 compatibility correction
+
+The package engine range is now `>=22.22`, aligned with n8n 2.31.6. The prior
+`<25` upper bound was package metadata only and incorrectly rejected or warned
+on the Node.js 26 runtime used by the target n8n container.

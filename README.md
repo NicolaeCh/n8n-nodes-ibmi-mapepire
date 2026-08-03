@@ -58,8 +58,7 @@ the required object authorities.
 - self-hosted n8n with community packages enabled
 - Mapepire server reachable from the n8n runtime; default port `8076`
 - an IBM i profile with least privilege
-- Node.js 20.19 through 24.x at runtime; use Node.js 22.14 or newer for
-  development and npm trusted publishing
+- Node.js 22.22 or newer at runtime, aligned with n8n 2.31.6; Node.js 26 is supported by the package metadata
 
 Because the package has the required runtime dependency `@ibm/mapepire-js`, it
 is an **unverified self-hosted community node** under the current n8n verified
@@ -83,7 +82,7 @@ environment:
   N8N_UNVERIFIED_PACKAGES_ENABLED: "true"
   N8N_COMMUNITY_PACKAGES_MANAGED_BY_ENV: "true"
   N8N_COMMUNITY_PACKAGES: >-
-    [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.1"}]
+    [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.2"}]
 ```
 
 For stricter supply-chain control, replace the broad unverified-package switch
@@ -92,7 +91,7 @@ with the published SHA-512 npm checksum:
 ```yaml
 N8N_UNVERIFIED_PACKAGES_ENABLED: "false"
 N8N_COMMUNITY_PACKAGES: >-
-  [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.1","checksum":"sha512-..."}]
+  [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.2","checksum":"sha512-..."}]
 ```
 
 The environment-managed list is the complete desired package set; omitted
@@ -100,12 +99,12 @@ packages are removed. Persist `/home/node/.n8n`.
 
 ## Install the supplied tarball
 
-The release ZIP includes `n8n-nodes-ibmi-mapepire-0.1.1.tgz`:
+The release ZIP includes `n8n-nodes-ibmi-mapepire-0.1.2.tgz`:
 
 ```bash
 mkdir -p /home/node/.n8n/nodes
 cd /home/node/.n8n/nodes
-npm install /tmp/n8n-nodes-ibmi-mapepire-0.1.1.tgz
+npm install /tmp/n8n-nodes-ibmi-mapepire-0.1.2.tgz
 ```
 
 Run the command as the same user that starts n8n, usually `node` in the official
