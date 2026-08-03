@@ -28,7 +28,7 @@ function poolKey(config: RuntimeConfig): string {
 		.digest('hex');
 }
 
-async function createPool(config: RuntimeConfig, size: number): Promise<Pool> {
+export async function createPool(config: RuntimeConfig, size: number): Promise<Pool> {
 	const credentials = config.credentials;
 	const pool = new Pool({
 		creds: {

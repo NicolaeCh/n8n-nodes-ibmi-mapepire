@@ -60,9 +60,10 @@ the required object authorities.
 - an IBM i profile with least privilege
 - Node.js 22.22 or newer at runtime, aligned with n8n 2.31.6; Node.js 26 is supported by the package metadata
 
-Because the package has the required runtime dependency `@ibm/mapepire-js`, it
-is an **unverified self-hosted community node** under the current n8n verified
-node rules. It is not presented as an n8n Cloud verified node.
+The official Mapepire client is declared as the exact required peer dependency
+`@ibm/mapepire-js@0.6.1`. The package is an **unverified self-hosted community
+node** under the current n8n verified-node rules because it depends on an
+external runtime package. It is not presented as an n8n Cloud verified node.
 
 ## Install from npm
 
@@ -82,7 +83,7 @@ environment:
   N8N_UNVERIFIED_PACKAGES_ENABLED: "true"
   N8N_COMMUNITY_PACKAGES_MANAGED_BY_ENV: "true"
   N8N_COMMUNITY_PACKAGES: >-
-    [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.2"}]
+    [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.3"}]
 ```
 
 For stricter supply-chain control, replace the broad unverified-package switch
@@ -91,7 +92,7 @@ with the published SHA-512 npm checksum:
 ```yaml
 N8N_UNVERIFIED_PACKAGES_ENABLED: "false"
 N8N_COMMUNITY_PACKAGES: >-
-  [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.2","checksum":"sha512-..."}]
+  [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.3","checksum":"sha512-..."}]
 ```
 
 The environment-managed list is the complete desired package set; omitted
@@ -99,17 +100,19 @@ packages are removed. Persist `/home/node/.n8n`.
 
 ## Install the supplied tarball
 
-The release ZIP includes `n8n-nodes-ibmi-mapepire-0.1.2.tgz`:
+The release ZIP includes `n8n-nodes-ibmi-mapepire-0.1.3.tgz`:
 
 ```bash
 mkdir -p /home/node/.n8n/nodes
 cd /home/node/.n8n/nodes
-npm install /tmp/n8n-nodes-ibmi-mapepire-0.1.2.tgz
+npm install @ibm/mapepire-js@0.6.1 /tmp/n8n-nodes-ibmi-mapepire-0.1.3.tgz \
+  --omit=dev --no-audit --no-fund
 ```
 
 Run the command as the same user that starts n8n, usually `node` in the official
-container. npm must also be able to obtain the pinned `@ibm/mapepire-js@0.6.1`
-dependency from its configured registry or cache. Restart n8n afterward.
+container. Installing both artifacts explicitly avoids peer-resolution differences
+between npm configurations. npm must be able to obtain `@ibm/mapepire-js@0.6.1`
+from its configured registry or cache. Restart n8n afterward.
 
 ## Credential fields
 

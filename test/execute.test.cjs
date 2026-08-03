@@ -3,6 +3,8 @@ const assert = require('node:assert/strict');
 const { executeSelect, executeWrite } = require('../.test-dist/execute.js');
 const { invalidateManagedPool } = require('../.test-dist/poolManager.js');
 
+const node = { name: 'IBM i Db2 (Mapepire)', type: 'ibmiMapepire', typeVersion: 1, position: [0, 0], parameters: {} };
+
 let hostCounter = 0;
 function config(overrides = {}) {
   hostCounter += 1;
@@ -69,7 +71,7 @@ function reset(plans) {
 test('SELECT configures Mapepire Pool, pages rows, truncates, and closes the cursor', async () => {
   reset([{ query: { firstPage: page([{ ID: 1 }, { ID: 2 }], false, 4), morePages: [page([{ ID: 3 }, { ID: 4 }], false, 5)] } }]);
   const cfg = config();
-  const result = await executeSelect(cfg, 'SELECT ID FROM APPDATA.T', []);
+  const result = await executeSelect(node, cfg, 'SELECT ID FROM APPDATA.T', []);
   assert.deepEqual(result.rows, [{ ID: 1 }, { ID: 2 }, { ID: 3 }]);
   assert.equal(result.rowCount, 3);
   assert.equal(result.truncated, true);
@@ -98,7 +100,7 @@ test('SELECT retries exactly once after a transport failure and recreates the po
     { query: { firstPage: page([{ OK: 1 }], true) } },
   ]);
   const cfg = config();
-  const result = await executeSelect(cfg, 'SELECT 1 AS OK FROM APPDATA.T', []);
+  const result = await executeSelect(node, cfg, 'SELECT 1 AS OK FROM APPDATA.T', []);
   assert.deepEqual(result.rows, [{ OK: 1 }]);
   assert.equal(global.__MAPEPIRE_FAKE__.pools.length, 2);
   assert.equal(global.__MAPEPIRE_FAKE__.pools[0].ended, true);
@@ -110,8 +112,8 @@ test('SELECT does not retry SQL errors and preserves the primary error if close 
   reset([{ query: { executeError: primary, closeError: new Error('close failed') } }]);
   const cfg = config();
   await assert.rejects(
-    executeSelect(cfg, 'SELECT * FROM APPDATA.MISSING', []),
-    (error) => error === primary,
+    executeSelect(node, cfg, 'SELECT * FROM APPDATA.MISSING', []),
+    /SQL0204 APPDATA.MISSING not found/,
   );
   assert.equal(global.__MAPEPIRE_FAKE__.pools.length, 1);
   await invalidateManagedPool(cfg);
@@ -126,7 +128,7 @@ test('unsuccessful Mapepire result objects become errors and are not retried as 
   reset([{ query: { firstPage: failed } }]);
   const cfg = config();
   await assert.rejects(
-    executeSelect(cfg, 'SELECT * FROM APPDATA.MISSING', []),
+    executeSelect(node, cfg, 'SELECT * FROM APPDATA.MISSING', []),
     /APPDATA.MISSING not found/,
   );
   assert.equal(global.__MAPEPIRE_FAKE__.pools.length, 1);
@@ -137,7 +139,7 @@ test('unsuccessful Mapepire result objects become errors and are not retried as 
 test('pool-disabled mode creates and closes a one-connection pool per execution', async () => {
   reset([{ query: { firstPage: page([{ ID: 1 }], true) } }]);
   const cfg = config({ poolEnabled: false, poolSize: 8 });
-  const result = await executeSelect(cfg, 'SELECT ID FROM APPDATA.T', []);
+  const result = await executeSelect(node, cfg, 'SELECT ID FROM APPDATA.T', []);
   assert.equal(result.rowCount, 1);
   const pool = global.__MAPEPIRE_FAKE__.pools[0];
   assert.equal(pool.options.maxSize, 1);
@@ -151,6 +153,7 @@ test('writes pass batch parameters unchanged and are never retried', async () =>
   const cfg = config();
   const parameters = [[1, 'A'], [2, 'B']];
   const result = await executeWrite(
+    node,
     cfg,
     'INSERT INTO APPDATA.T (ID, NAME) VALUES (?, ?)',
     parameters,
@@ -162,7 +165,7 @@ test('writes pass batch parameters unchanged and are never retried', async () =>
   reset([{ executeError: new Error('ECONNRESET after possible commit') }]);
   const failingCfg = config();
   await assert.rejects(
-    executeWrite(failingCfg, 'UPDATE APPDATA.T SET NAME = ? WHERE ID = ?', ['X', 1]),
+    executeWrite(node, failingCfg, 'UPDATE APPDATA.T SET NAME = ? WHERE ID = ?', ['X', 1]),
     /ECONNRESET/,
   );
   assert.equal(global.__MAPEPIRE_FAKE__.pools.length, 1);

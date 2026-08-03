@@ -41,11 +41,15 @@ function loadCaCertificate(inlinePem: string | undefined, caPath: string | undef
 		return inlinePem;
 	}
 	if (!caPath) return undefined;
-	let content: string;
+	let content: string | undefined;
+	let readError: string | undefined;
 	try {
 		content = readFileSync(caPath, 'utf8');
 	} catch (error) {
-		throw new Error(`Unable to read MAPEPIRE_CA_PATH ${caPath}: ${(error as Error).message}`);
+		readError = error instanceof Error ? error.message : String(error);
+	}
+	if (readError !== undefined || content === undefined) {
+		throw new Error(`Unable to read MAPEPIRE_CA_PATH ${caPath}: ${readError ?? 'unknown error'}`);
 	}
 	if (!content.trim()) throw new Error(`MAPEPIRE_CA_PATH ${caPath} is empty`);
 	if (content.length > 1_000_000) throw new Error('CA certificate file exceeds 1 MB');

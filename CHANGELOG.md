@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.3 - 2026-08-03
+
+- Resolved all `@n8n/node-cli` 0.41.2 lint findings reported for credentials, icons, tool support, descriptions, error handling, package author metadata, and runtime dependencies.
+- Added a live Mapepire credential test through `testedBy`.
+- Moved `@ibm/mapepire-js` 0.6.1 to an exact peer dependency, as required by the current community-node packaging policy.
+- Reworked cursor cleanup so errors are never thrown from a `finally` block.
+- Added themed icon declarations and protected the inline CA certificate value.
+
 ## 0.1.2 - 2026-08-03
 
 - Align the package Node.js engine with n8n 2.31.6: `>=22.22`.

@@ -1,8 +1,9 @@
-import type { ICredentialType, INodeProperties } from 'n8n-workflow';
+import type { ICredentialType, INodeProperties, Icon } from 'n8n-workflow';
 
 export class IbmiMapepireApi implements ICredentialType {
 	name = 'ibmiMapepireApi';
-	displayName = 'IBM i Mapepire';
+	displayName = 'IBM I Mapepire API';
+	icon: Icon = 'file:../nodes/IbmiMapepire/ibmi-mapepire.svg';
 	documentationUrl = 'https://github.com/NicolaeCh/n8n-nodes-ibmi-mapepire';
 
 	properties: INodeProperties[] = [
@@ -61,7 +62,7 @@ export class IbmiMapepireApi implements ICredentialType {
 			name: 'caCertificate',
 			type: 'string',
 			default: '',
-			typeOptions: { rows: 6 },
+			typeOptions: { rows: 6, password: true },
 			placeholder: '-----BEGIN CERTIFICATE-----',
 			description:
 				'Optional PEM CA certificate. Do not set this together with MAPEPIRE_CA_PATH.',

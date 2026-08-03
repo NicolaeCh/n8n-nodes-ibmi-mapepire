@@ -1,5 +1,6 @@
 import type { BindingValue, Pool, QueryMetaData } from '@ibm/mapepire-js';
-import type { IDataObject } from 'n8n-workflow';
+import type { IDataObject, INode } from 'n8n-workflow';
+import { NodeOperationError } from 'n8n-workflow';
 import { invalidateManagedPool, isTransportError, withPoolSlot } from './poolManager';
 import type {
 	RuntimeConfig,
@@ -7,16 +8,22 @@ import type {
 	WriteExecutionResult,
 } from './types';
 
+function toError(error: unknown): Error {
+	return error instanceof Error ? error : new Error(String(error));
+}
+
 function assertMapepireSuccess(
+	node: INode,
 	result: { success: boolean; error?: string; sql_rc: number; sql_state: string },
 	context: string,
 ): void {
 	if (result.success !== false && result.sql_rc >= 0) return;
 	const detail = result.error?.trim() || `SQLCODE ${result.sql_rc}, SQLSTATE ${result.sql_state}`;
-	throw new Error(`${context} failed: ${detail}`);
+	throw new NodeOperationError(node, `${context} failed: ${detail}`);
 }
 
 async function executeSelectOnce(
+	node: INode,
 	config: RuntimeConfig,
 	sql: string,
 	parameters: BindingValue[],
@@ -29,12 +36,14 @@ async function executeSelectOnce(
 		let executionTimeMs = 0;
 		const rows: IDataObject[] = [];
 		let truncated = false;
-		let primaryError: unknown;
+		let executionError: unknown;
+		let closeError: unknown;
+
 		try {
 			let page = await query.execute(
 				Math.min(config.credentials.pageSize, config.credentials.maxRows),
 			);
-			assertMapepireSuccess(page, 'SELECT');
+			assertMapepireSuccess(node, page, 'SELECT');
 			metadata = page.metadata;
 			sqlState = page.sql_state;
 			sqlCode = page.sql_rc;
@@ -55,20 +64,28 @@ async function executeSelectOnce(
 				page = await query.fetchMore(
 					Math.min(config.credentials.pageSize, config.credentials.maxRows - rows.length),
 				);
-				assertMapepireSuccess(page, 'SELECT fetch');
+				assertMapepireSuccess(node, page, 'SELECT fetch');
 				sqlState = page.sql_state;
 				sqlCode = page.sql_rc;
 				executionTimeMs += page.execution_time ?? 0;
 			}
 		} catch (error) {
-			primaryError = error;
-			throw error;
-		} finally {
-			try {
-				await query.close();
-			} catch (closeError) {
-				if (primaryError === undefined) throw closeError;
-			}
+			executionError = error;
+		}
+
+		try {
+			await query.close();
+		} catch (error) {
+			closeError = error;
+		}
+
+		if (executionError !== undefined) {
+			throw new NodeOperationError(node, toError(executionError));
+		}
+		if (closeError !== undefined) {
+			throw new NodeOperationError(node, toError(closeError), {
+				description: 'The SQL query completed, but its cursor could not be closed.',
+			});
 		}
 
 		return {
@@ -84,28 +101,37 @@ async function executeSelectOnce(
 }
 
 export async function executeSelect(
+	node: INode,
 	config: RuntimeConfig,
 	sql: string,
 	parameters: BindingValue[],
 ): Promise<SelectExecutionResult> {
 	try {
-		return await executeSelectOnce(config, sql, parameters);
+		return await executeSelectOnce(node, config, sql, parameters);
 	} catch (error) {
-		if (!config.credentials.retrySelectOnce || !isTransportError(error)) throw error;
-		await invalidateManagedPool(config);
-		return await executeSelectOnce(config, sql, parameters);
+		if (config.credentials.retrySelectOnce && isTransportError(error)) {
+			await invalidateManagedPool(config);
+			return await executeSelectOnce(node, config, sql, parameters);
+		}
+		throw new NodeOperationError(node, toError(error));
 	}
 }
 
 export async function executeWrite(
+	node: INode,
 	config: RuntimeConfig,
 	sql: string,
 	parameters: BindingValue[],
 ): Promise<WriteExecutionResult> {
 	// Deliberately no retry. A transport failure can occur after Db2 committed the change.
 	return await withPoolSlot(config, async (pool: Pool) => {
-		const result = await pool.execute<IDataObject>(sql, { parameters });
-		assertMapepireSuccess(result, 'Write');
+		let result;
+		try {
+			result = await pool.execute<IDataObject>(sql, { parameters });
+		} catch (error) {
+			throw new NodeOperationError(node, toError(error));
+		}
+		assertMapepireSuccess(node, result, 'Write');
 		return {
 			updateCount: result.update_count ?? 0,
 			sqlState: result.sql_state,

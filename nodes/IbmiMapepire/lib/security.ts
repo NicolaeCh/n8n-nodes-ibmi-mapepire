@@ -590,10 +590,14 @@ export function parseAndValidateParameters(
 		const trimmed = value.trim();
 		if (!trimmed) value = [];
 		else {
+			let parseError: string | undefined;
 			try {
 				value = JSON.parse(trimmed) as unknown;
 			} catch (error) {
-				throw new Error(`Parameters must be valid JSON: ${(error as Error).message}`);
+				parseError = error instanceof Error ? error.message : String(error);
+			}
+			if (parseError !== undefined) {
+				throw new Error(`Parameters must be valid JSON: ${parseError}`);
 			}
 		}
 	}

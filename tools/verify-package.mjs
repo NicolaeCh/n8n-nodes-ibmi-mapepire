@@ -26,8 +26,11 @@ if (pkg.engines?.node !== '>=22.22') {
   errors.push('Node engine must align with n8n 2.31.6 and permit Node.js 26');
 }
 
-if (pkg.dependencies?.['@ibm/mapepire-js'] !== '0.6.1') {
-  errors.push('Mapepire client must be pinned to 0.6.1');
+if (pkg.dependencies && Object.keys(pkg.dependencies).length > 0) {
+  errors.push('Community package must not declare runtime dependencies');
+}
+if (pkg.peerDependencies?.['@ibm/mapepire-js'] !== '0.6.1') {
+  errors.push('Mapepire client peer dependency must be pinned to 0.6.1');
 }
 
 if (!nodeSource.includes("import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';")) {
@@ -41,6 +44,25 @@ if (!nodeSource.includes('outputs: [NodeConnectionTypes.Main]')) {
 }
 if (/\bNodeConnectionType\.Main\b/.test(nodeSource)) {
   errors.push('Type-only NodeConnectionType must not be used as a runtime value');
+}
+
+if (!/usableAsTool:\s*(true|false)/.test(nodeSource)) {
+  errors.push('Node must explicitly declare usableAsTool');
+}
+if (!nodeSource.includes('usableAsTool: false')) {
+  errors.push('Write-capable node must not be exposed as an AI tool');
+}
+if (!nodeSource.includes("testedBy: 'ibmiMapepireCredentialTest'")) {
+  errors.push('Credential must be associated with the node credential test');
+}
+if (!credentialSource.includes("displayName = 'IBM I Mapepire API'")) {
+  errors.push('Credential display name must satisfy the n8n API naming rule');
+}
+if (!credentialSource.includes("icon: Icon = 'file:../nodes/IbmiMapepire/ibmi-mapepire.svg'")) {
+  errors.push('Credential icon is missing');
+}
+if (!credentialSource.includes('typeOptions: { rows: 6, password: true }')) {
+  errors.push('CA certificate field must be treated as sensitive by n8n');
 }
 
 const requiredCredentialNames = [

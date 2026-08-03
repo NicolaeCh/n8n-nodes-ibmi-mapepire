@@ -10,9 +10,10 @@ This is an unverified community package for self-hosted n8n. After publication:
 4. Review and accept the unverified-package warning.
 5. Restart n8n when the deployment does not reload community nodes automatically.
 
-The package installs `@ibm/mapepire-js@0.6.1` as its pinned runtime dependency.
-The n8n host/container therefore needs npm registry access or a registry/cache
-that already contains both packages.
+The package declares `@ibm/mapepire-js@0.6.1` as an exact required peer
+dependency. Modern npm resolves it during normal package installation. The n8n
+host/container therefore needs registry access, or a registry/cache that already
+contains both packages.
 
 ## Environment-managed installation: n8n 2.21+
 
@@ -24,7 +25,7 @@ services:
       N8N_UNVERIFIED_PACKAGES_ENABLED: "true"
       N8N_COMMUNITY_PACKAGES_MANAGED_BY_ENV: "true"
       N8N_COMMUNITY_PACKAGES: >-
-        [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.2"}]
+        [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.3"}]
     volumes:
       - n8n_data:/home/node/.n8n
 ```
@@ -39,7 +40,7 @@ publication and configure:
 ```yaml
 N8N_UNVERIFIED_PACKAGES_ENABLED: "false"
 N8N_COMMUNITY_PACKAGES: >-
-  [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.2","checksum":"sha512-..."}]
+  [{"name":"n8n-nodes-ibmi-mapepire","version":"0.1.3","checksum":"sha512-..."}]
 ```
 
 The checksum requires an explicit version. In managed mode the Community Nodes
@@ -50,15 +51,17 @@ settings page is read-only.
 ```bash
 mkdir -p /home/node/.n8n/nodes
 cd /home/node/.n8n/nodes
-npm install /tmp/n8n-nodes-ibmi-mapepire-0.1.2.tgz
+npm install @ibm/mapepire-js@0.6.1 /tmp/n8n-nodes-ibmi-mapepire-0.1.3.tgz \
+  --omit=dev --no-audit --no-fund
 ```
 
 Run this as the operating-system user that starts n8n. In the official image:
 
 ```bash
-docker cp n8n-nodes-ibmi-mapepire-0.1.2.tgz n8n:/tmp/
+docker cp n8n-nodes-ibmi-mapepire-0.1.3.tgz n8n:/tmp/
 docker exec -u node n8n sh -lc \
-  'mkdir -p /home/node/.n8n/nodes && cd /home/node/.n8n/nodes && npm install /tmp/n8n-nodes-ibmi-mapepire-0.1.2.tgz'
+  'mkdir -p /home/node/.n8n/nodes && cd /home/node/.n8n/nodes && npm install @ibm/mapepire-js@0.6.1 /tmp/n8n-nodes-ibmi-mapepire-0.1.3.tgz \
+  --omit=dev --no-audit --no-fund'
 docker restart n8n
 ```
 

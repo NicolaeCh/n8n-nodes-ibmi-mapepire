@@ -1,6 +1,6 @@
-# Verification report — 0.1.2
+# Verification report — 0.1.3
 
-Date: 2026-08-01
+Date: 2026-08-03
 
 ## Scope
 
@@ -16,7 +16,7 @@ maintainer can compare against the original repository before publication.
 
 ## Source/API verification
 
-- Dependency pinned to `@ibm/mapepire-js` 0.6.1.
+- Exact required peer dependency pinned to `@ibm/mapepire-js` 0.6.1; normal runtime `dependencies` is absent.
 - Pool creation, `Pool.query`, cursor `execute`/`fetchMore`/`close`,
   `Pool.execute`, scalar/batch bindings, TLS CA, `rejectUnauthorized`, JDBC
   options, and default port 8076 were checked against the published Mapepire
@@ -32,6 +32,7 @@ maintainer can compare against the original repository before publication.
 30 tests passed
 TypeScript verification passed
 Package metadata verification passed
+Production compilation passed
 Packed node/credential entry-point smoke load passed
 ```
 
@@ -58,14 +59,17 @@ Covered areas:
 
 The TypeScript sources compile through the included offline type harness, the
 package can be assembled with `npm run pack:offline`, and the packed node and
-credential entry points were loaded successfully with controlled module doubles. The harness mirrors the
+credential entry points were loaded successfully with controlled module doubles.
+The harness mirrors the
 published Mapepire 0.6.1 signatures used by the node.
 
-The current environment could not reach the public npm registry and had no live
+The current build environment uses a restricted npm mirror that does not expose `@n8n/node-cli` 0.41.2 and had no live
 IBM i/Mapepire endpoint. Therefore the following remain release gates:
 
-1. `npm install`, official `n8n-node` lint/build, and `npm pack --dry-run` on a
-   connected development host.
+1. Run `npm install`, `npm run lint`, `npm run build`, and `npm pack --dry-run`
+   on a connected development host. The exact 16 errors and one warning reported
+   by `n8n-node lint` 0.41.2 were patched, but the official linter could not be
+   rerun inside this restricted mirror.
 2. Live TLS and SQL integration matrix from `docs/TESTING.md` against a
    non-production IBM i schema.
 3. Comparison of the final variable/rule table with the original private
@@ -94,3 +98,15 @@ The development dependency is pinned to `@n8n/node-cli` 0.41.2.
 The package engine range is now `>=22.22`, aligned with n8n 2.31.6. The prior
 `<25` upper bound was package metadata only and incorrectly rejected or warned
 on the Node.js 26 runtime used by the target n8n container.
+
+
+## n8n-node lint 0.41.2 corrections
+
+Version 0.1.3 adds a credential test via `testedBy`, node and credential icons,
+the required credential API display name, protected CA-certificate input, an
+explicit `usableAsTool: false` decision, final punctuation, `NodeOperationError`
+wrapping, complete author metadata, and an empty runtime `dependencies` set.
+The Mapepire client is now an exact required peer dependency. The node is not
+exposed as an AI tool because it includes controlled write operations.
+
+CI and publish workflows now use Node.js 22.22, matching the package engine.

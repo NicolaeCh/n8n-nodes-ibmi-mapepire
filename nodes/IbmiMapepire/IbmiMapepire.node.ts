@@ -1,6 +1,9 @@
 import type {
+	ICredentialsDecrypted,
+	ICredentialTestFunctions,
 	IDataObject,
 	IExecuteFunctions,
+	INodeCredentialTestResult,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
@@ -8,6 +11,7 @@ import type {
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 import { runtimeConfigFromCredentials } from './lib/config';
 import { executeSelect, executeWrite } from './lib/execute';
+import { createPool } from './lib/poolManager';
 import { parseAndValidateParameters, validateSql } from './lib/security';
 import type { RuntimeConfig, SqlOperation } from './lib/types';
 
@@ -24,15 +28,25 @@ export class IbmiMapepire implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'IBM i Db2 (Mapepire)',
 		name: 'ibmiMapepire',
-		icon: 'file:ibmi-mapepire.svg',
+		icon: {
+			light: 'file:ibmi-mapepire.svg',
+			dark: 'file:ibmi-mapepire.svg',
+		},
 		group: ['transform'],
+		usableAsTool: false,
 		version: 1,
 		subtitle: '={{$parameter["operation"]}}',
-		description: 'Execute policy-controlled Db2 for IBM i SQL through Mapepire',
+		description: 'Execute policy-controlled Db2 for IBM i SQL through Mapepire.',
 		defaults: { name: 'IBM i Db2 (Mapepire)' },
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
-		credentials: [{ name: 'ibmiMapepireApi', required: true }],
+		credentials: [
+			{
+				name: 'ibmiMapepireApi',
+				required: true,
+				testedBy: 'ibmiMapepireCredentialTest',
+			},
+		],
 		properties: [
 			{
 				displayName: 'Operation',
@@ -44,25 +58,25 @@ export class IbmiMapepire implements INodeType {
 					{
 						name: 'Select',
 						value: 'select',
-						description: 'Run a qualified, allowlisted SELECT statement',
+						description: 'Run a qualified, allowlisted SELECT statement.',
 						action: 'Select rows from IBM i',
 					},
 					{
 						name: 'Insert',
 						value: 'insert',
-						description: 'Run INSERT INTO ... VALUES against an allowlisted library',
+						description: 'Run INSERT INTO ... VALUES against an allowlisted library.',
 						action: 'Insert rows into IBM i',
 					},
 					{
 						name: 'Update',
 						value: 'update',
-						description: 'Run an UPDATE against an allowlisted library',
+						description: 'Run an UPDATE against an allowlisted library.',
 						action: 'Update rows in IBM i',
 					},
 					{
 						name: 'Create Table',
 						value: 'createTable',
-						description: 'Create a table with explicit column definitions',
+						description: 'Create a table with explicit column definitions.',
 						action: 'Create a table in IBM i',
 					},
 				],
@@ -114,9 +128,42 @@ export class IbmiMapepire implements INodeType {
 				name: 'includeMetadata',
 				type: 'boolean',
 				default: false,
-				description: 'Whether to add SQL state/code, row counts, timing, and truncation information',
+				description: 'Whether to add SQL state/code, row counts, timing, and truncation information.',
 			},
 		],
+	};
+
+
+	methods = {
+		credentialTest: {
+			async ibmiMapepireCredentialTest(
+				this: ICredentialTestFunctions,
+				credential: ICredentialsDecrypted,
+			): Promise<INodeCredentialTestResult> {
+				let pool: Awaited<ReturnType<typeof createPool>> | undefined;
+				try {
+					const config = runtimeConfigFromCredentials(credential.data);
+					pool = await createPool(config, 1);
+					const result = await pool.execute<IDataObject>(
+						'SELECT CURRENT_SERVER AS SERVER_NAME FROM SYSIBM.SYSDUMMY1',
+					);
+					if (result.success === false || result.sql_rc < 0) {
+						const detail =
+							result.error?.trim() ||
+							`SQLCODE ${result.sql_rc}, SQLSTATE ${result.sql_state}`;
+						return { status: 'Error', message: `Connection test failed: ${detail}` };
+					}
+					return { status: 'OK', message: 'Connection successful.' };
+				} catch (error) {
+					return {
+						status: 'Error',
+						message: error instanceof Error ? error.message : String(error),
+					};
+				} finally {
+					pool?.end();
+				}
+			},
+		},
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
@@ -161,7 +208,7 @@ export class IbmiMapepire implements INodeType {
 				) as boolean;
 
 				if (operation === 'select') {
-					const result = await executeSelect(config, sql, parameters);
+					const result = await executeSelect(this.getNode(), config, sql, parameters);
 					const execution = {
 						rowCount: result.rowCount,
 						truncated: result.truncated,
@@ -191,7 +238,7 @@ export class IbmiMapepire implements INodeType {
 					continue;
 				}
 
-				const result = await executeWrite(config, sql, parameters);
+				const result = await executeWrite(this.getNode(), config, sql, parameters);
 				outputItems.push({
 					json: {
 						success: true,

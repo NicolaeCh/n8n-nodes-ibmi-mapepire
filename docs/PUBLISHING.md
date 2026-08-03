@@ -20,7 +20,7 @@ SQL/logs.
 
 ## 2. Connected build before first release
 
-Use Node.js 22.14 or newer:
+Use Node.js 22.22 or newer:
 
 ```bash
 npm install
@@ -56,7 +56,7 @@ token in the repository.
 After publication, record the exact package integrity:
 
 ```bash
-npm view n8n-nodes-ibmi-mapepire@0.1.2 dist.integrity
+npm view n8n-nodes-ibmi-mapepire@0.1.3 dist.integrity
 ```
 
 That `sha512-...` value can be used as the n8n managed-package checksum.
@@ -81,8 +81,8 @@ long-lived npm token.
 4. Create and push a matching semantic-version tag.
 
 ```bash
-git tag v0.1.2
-git push origin v0.1.2
+git tag v0.1.3
+git push origin v0.1.3
 ```
 
 The tag starts `.github/workflows/publish.yml`.
@@ -115,7 +115,7 @@ Also verify:
 - live SELECT/INSERT/UPDATE/CREATE tests passed in a disposable schema
 - write-interruption behavior was reconciled manually
 - package contains only intended files
-- dependency is pinned to `@ibm/mapepire-js@0.6.1`
+- required peer dependency is pinned exactly to `@ibm/mapepire-js@0.6.1`
 - no secrets, private hostnames, or certificates are in source or tarball
 - README version and declarative-install example match the release
 - npm integrity checksum is documented for operators
