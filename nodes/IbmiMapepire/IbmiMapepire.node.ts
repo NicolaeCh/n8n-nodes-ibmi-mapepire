@@ -61,7 +61,7 @@ export class IbmiMapepire implements INodeType {
 					{
 						name: 'Insert',
 						value: 'insert',
-						description: 'Run INSERT INTO ... VALUES against an allowlisted library',
+						description: 'Run INSERT INTO  VALUES against an allowlisted library.',
 						action: 'Insert rows into IBM i',
 					},
 					{

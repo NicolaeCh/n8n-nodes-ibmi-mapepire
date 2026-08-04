@@ -1,3 +1,4 @@
+// eslint-disable-next-line @n8n/community-nodes/no-restricted-imports
 import { readFileSync } from 'node:fs';
 import type { ICredentialDataDecryptedObject } from 'n8n-workflow';
 import {

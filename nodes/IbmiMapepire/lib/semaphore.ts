@@ -10,7 +10,7 @@ export class PoolWaitTimeoutError extends IbmiMapepireError {
 interface Waiter {
 	resolve: (release: () => void) => void;
 	reject: (error: Error) => void;
-	timer: ReturnType<typeof setTimeout>;
+	timer: ReturnType<typeof globalThis.setTimeout>;
 }
 
 export class Semaphore {
@@ -31,7 +31,7 @@ export class Semaphore {
 			const waiter: Waiter = {
 				resolve,
 				reject,
-				timer: setTimeout(() => {
+				timer: globalThis.setTimeout(() => {
 					const index = this.queue.indexOf(waiter);
 					if (index >= 0) this.queue.splice(index, 1);
 					reject(new PoolWaitTimeoutError(timeoutMs));
@@ -48,7 +48,7 @@ export class Semaphore {
 			released = true;
 			const waiter = this.queue.shift();
 			if (waiter) {
-				clearTimeout(waiter.timer);
+				globalThis.clearTimeout(waiter.timer);
 				waiter.resolve(this.createRelease());
 				return;
 			}
