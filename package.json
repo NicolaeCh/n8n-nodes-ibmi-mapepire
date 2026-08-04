@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-ibmi-mapepire",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"description": "Secure n8n community node for Db2 for IBM i using the official Mapepire Node.js client",
 	"license": "MIT",
 	"homepage": "https://github.com/NicolaeCh/n8n-nodes-ibmi-mapepire#readme",
@@ -44,7 +44,6 @@
 		"prepublishOnly": "npm run release:verify",
 		"pretest:unit": "npm run prepare:offline-types",
 		"preverify:types": "npm run prepare:offline-types",
-		"release": "n8n-node release",
 		"release:build": "sh scripts/build-release.sh",
 		"release:verify": "npm run ci:verify",
 		"test": "npm run test:unit",
@@ -54,7 +53,9 @@
 		"verify:source": "node tools/verify-package.mjs",
 		"verify:toolchain": "node tools/verify-node-cli-version.mjs",
 		"verify:types": "tsc -p tsconfig.verify.json --noEmit",
-		"audit:package": "npm audit --omit=dev --omit=peer --audit-level=high"
+		"audit:package": "npm audit --omit=dev --omit=peer --audit-level=high",
+		"prepack": "node tools/prepack-guard.mjs",
+		"audit:toolchain:report": "npm audit --include=dev --omit=peer || true"
 	},
 	"files": [
 		"dist",
@@ -78,7 +79,6 @@
 		"@types/node": "22.18.0",
 		"eslint": "9.39.4",
 		"prettier": "3.8.3",
-		"release-it": "20.2.0",
 		"typescript": "5.9.3"
 	},
 	"peerDependencies": {

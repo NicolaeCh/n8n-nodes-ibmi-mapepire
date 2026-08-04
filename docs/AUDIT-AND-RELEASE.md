@@ -7,7 +7,7 @@ The reported Handlebars and Minimatch findings came from the obsolete
 findings. Reusing an old `node_modules` directory or lock file caused npm scripts
 to select that stale CLI.
 
-Version 0.2.0 pins CLI 0.41.2 and checks its installed version before lint,
+Version 0.2.1 pins CLI 0.41.2 and checks its installed version before lint,
 build, or development starts.
 
 ## Audit surfaces
@@ -53,3 +53,16 @@ The release pipeline verifies the tarball itself, not just the source tree. It
 rejects normal runtime dependencies, invalid peer dependencies, a missing
 Mapepire bundle/license, an external Mapepire require, and a truncated vendor
 file.
+
+## Why development audit warnings may remain
+
+`@n8n/node-cli` brings a large development-only tree for linting, local n8n execution, and AI-node tooling. `npm run release:build` blocks on **high** or **critical** findings in that tree, but moderate transitive findings are reported without blocking the distributable package. The two runtime-relevant gates remain separate and blocking:
+
+- `npm run audit:bundled-runtime` audits a clean installation of `@ibm/mapepire-js@0.6.1` and its WebSocket runtime.
+- `npm run audit:package` audits the dependency surface of the package that n8n installs.
+
+Do not use `npm audit fix --force`; it may replace the pinned n8n CLI or other reviewed tooling with semver-major versions.
+
+## Incomplete tarballs are rejected
+
+Running `npm pack` without a successful build used to create a metadata-only archive. Version 0.2.1 adds a `prepack` integrity guard. Packing now fails unless all compiled node files, both icons, the embedded Mapepire client, its Apache license, and its SHA-256 manifest are present and consistent.

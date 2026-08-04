@@ -1,4 +1,4 @@
-# Verification report — 0.2.0
+# Verification report — 0.2.1
 
 Date: 2026-08-03
 
@@ -15,7 +15,7 @@ The earlier releases had four structural problems:
 4. development-only audit findings were being confused with code shipped to
    the n8n runtime.
 
-Version 0.2.0 resolves these by requiring a clean exact toolchain, extending the
+Version 0.2.1 resolves these by requiring a clean exact toolchain, extending the
 official ESLint configuration, embedding the official Mapepire 0.6.1 bundle at
 build time, and auditing development and distributed runtime surfaces
 separately.

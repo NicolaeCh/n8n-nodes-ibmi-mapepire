@@ -12,7 +12,7 @@ with the source before enabling CI.
 ## 2. Inspect the package
 
 ```bash
-tar -tzf release/n8n-nodes-ibmi-mapepire-0.2.0.tgz
+tar -tzf release/n8n-nodes-ibmi-mapepire-0.2.1.tgz
 ```
 
 Confirm that the tarball contains:
@@ -42,13 +42,13 @@ Push the complete source and generated lock file. The included CI tests Node
 Log into npm with two-factor authentication and publish:
 
 ```bash
-npm publish release/n8n-nodes-ibmi-mapepire-0.2.0.tgz --provenance --access public
+npm publish release/n8n-nodes-ibmi-mapepire-0.2.1.tgz --provenance --access public
 ```
 
 Record the integrity value:
 
 ```bash
-npm view n8n-nodes-ibmi-mapepire@0.2.0 dist.integrity
+npm view n8n-nodes-ibmi-mapepire@0.2.1 dist.integrity
 ```
 
 ## 5. Configure trusted publishing
@@ -63,8 +63,8 @@ The supplied workflow requests `id-token: write` and publishes on a semantic
 version tag.
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.2.1
+git push origin v0.2.1
 ```
 
 ## 6. n8n community installation

@@ -1,4 +1,4 @@
-n8n-nodes-ibmi-mapepire 0.2.0 verification summary
+n8n-nodes-ibmi-mapepire 0.2.1 verification summary
 Date: 2026-08-03
 
 Executed successfully in the artifact environment:

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1
+
+- Removed the unused direct `release-it` development dependency that introduced the blocking high-severity `undici` audit path.
+- Added a mandatory `prepack` guard; `npm pack` now refuses to create a package unless compiled entry points and the integrity-checked Mapepire 0.6.1 bundle exist.
+- Added staged release output and automatic deletion of partial artifacts after any failure.
+- Kept high/critical development-toolchain audits blocking while allowing moderate transitive findings to be reported.
+- Added an optional full advisory report command: `npm run audit:toolchain:report`.
+
 ## 0.2.0
 
 - Bundle the official Mapepire 0.6.1 runtime into `dist` to satisfy current n8n community-package dependency rules.
