@@ -30,7 +30,6 @@ export class IbmiMapepire implements INodeType {
 			dark: 'file:ibmi-mapepire-dark.svg',
 		},
 		group: ['transform'],
-		usableAsTool: false,
 		version: 1,
 		subtitle: '={{$parameter["operation"]}}',
 		description: 'Execute policy-controlled Db2 for IBM i SQL through Mapepire.',
@@ -138,6 +137,9 @@ export class IbmiMapepire implements INodeType {
 			): Promise<INodeCredentialTestResult> {
 				let pool: Awaited<ReturnType<typeof createPool>> | undefined;
 				try {
+					if (!credential.data) {
+						return { status: 'Error', message: 'Credential data is missing.' };
+					}		
 					const config = runtimeConfigFromCredentials(credential.data);
 					pool = await createPool(config, 1);
 					const result = await pool.execute<IDataObject>(
