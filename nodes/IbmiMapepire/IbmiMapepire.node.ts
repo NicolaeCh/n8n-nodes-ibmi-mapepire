@@ -25,6 +25,7 @@ export class IbmiMapepire implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'IBM i Db2 (Mapepire)',
 		name: 'ibmiMapepire',
+		usableAsTool: true,
 		icon: {
 			light: 'file:ibmi-mapepire-light.svg',
 			dark: 'file:ibmi-mapepire-dark.svg',
