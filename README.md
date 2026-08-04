@@ -3,7 +3,7 @@
 A policy-controlled n8n community node for **Db2 for IBM i** using the official
 Mapepire Node.js client.
 
-Version 0.2.1 changes the packaging architecture so the published community
+Version 0.2.2 changes the packaging architecture so the published community
 package has no third-party npm runtime dependency. During the build,
 `@ibm/mapepire-js@0.6.1` is copied into `dist` together with its Apache-2.0
 license and a SHA-256 manifest. This satisfies the current n8n community-node
@@ -117,7 +117,7 @@ The release command performs:
 3. isolated audit of `@ibm/mapepire-js@0.6.1`
 4. official `n8n-node lint`
 5. official `n8n-node build`
-6. 31 automated policy and execution tests
+6. 34 automated policy and execution tests
 7. TypeScript verification
 8. built-package policy and vendor-manifest verification
 9. production-package audit excluding the host-provided peer
@@ -126,8 +126,8 @@ The release command performs:
 The outputs are:
 
 ```text
-release/n8n-nodes-ibmi-mapepire-0.2.1.tgz
-release/n8n-nodes-ibmi-mapepire-0.2.1.tgz.sha256
+release/n8n-nodes-ibmi-mapepire-0.2.2.tgz
+release/n8n-nodes-ibmi-mapepire-0.2.2.tgz.sha256
 ```
 
 Do not run `npm audit fix --force`. It can replace the pinned n8n CLI or alter
@@ -140,8 +140,8 @@ Copy the built tarball:
 
 ```bash
 podman cp \
-  release/n8n-nodes-ibmi-mapepire-0.2.1.tgz \
-  n8n:/tmp/n8n-nodes-ibmi-mapepire-0.2.1.tgz
+  release/n8n-nodes-ibmi-mapepire-0.2.2.tgz \
+  n8n:/tmp/n8n-nodes-ibmi-mapepire-0.2.2.tgz
 ```
 
 Install it as the same user that runs n8n:
@@ -153,7 +153,7 @@ podman exec -u node n8n sh -lc '
   cd /home/node/.n8n/nodes
   [ -f package.json ] || npm init -y >/dev/null
   npm uninstall n8n-nodes-ibmi-mapepire --no-audit --no-fund || true
-  npm install /tmp/n8n-nodes-ibmi-mapepire-0.2.1.tgz \
+  npm install /tmp/n8n-nodes-ibmi-mapepire-0.2.2.tgz \
     --omit=dev --no-audit --no-fund
 '
 
@@ -175,7 +175,7 @@ console.log(p.name, p.version, p.dependencies, p.peerDependencies);
 Expected package metadata:
 
 ```text
-n8n-nodes-ibmi-mapepire 0.2.1 undefined { n8n-workflow: '*' }
+n8n-nodes-ibmi-mapepire 0.2.2 undefined { n8n-workflow: '*' }
 ```
 
 Search for **IBM i Db2 (Mapepire)** in the editor, create an **IBM I Mapepire
@@ -211,7 +211,7 @@ Parameters:
 After `npm run release:build` succeeds and the generated lock file is committed, publish the exact verified tarball:
 
 ```bash
-npm publish release/n8n-nodes-ibmi-mapepire-0.2.1.tgz \
+npm publish release/n8n-nodes-ibmi-mapepire-0.2.2.tgz \
   --provenance --access public
 ```
 

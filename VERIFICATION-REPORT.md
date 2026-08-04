@@ -1,6 +1,6 @@
-# Verification report — 0.2.1
+# Verification report — 0.2.2
 
-Date: 2026-08-03
+Date: 2026-08-04
 
 ## Root causes corrected
 
@@ -15,7 +15,7 @@ The earlier releases had four structural problems:
 4. development-only audit findings were being confused with code shipped to
    the n8n runtime.
 
-Version 0.2.1 resolves these by requiring a clean exact toolchain, extending the
+Version 0.2.2 resolves these by requiring a clean exact toolchain, extending the
 official ESLint configuration, embedding the official Mapepire 0.6.1 bundle at
 build time, and auditing development and distributed runtime surfaces
 separately.
@@ -55,7 +55,7 @@ The following checks were executed successfully against the corrected source:
 - offline production TypeScript compilation
 - compiled runtime inspection confirming the relative Mapepire load path
 - removal of every source-level import from `@ibm/mapepire-js`; a local minimal API contract is used only for TypeScript checking
-- 31/31 automated tests
+- 34/34 automated tests
 - distinct light/dark icon verification
 - credential/environment mapping verification
 - SQL allowlist and denial-policy verification

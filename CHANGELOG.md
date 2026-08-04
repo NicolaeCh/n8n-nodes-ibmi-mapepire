@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2
+
+- Fixed the four n8n option-description punctuation violations reported by `@n8n/node-cli` 0.41.2.
+- Removed the custom-error throw from Mapepire pool initialization while preserving pool cleanup and reconnect behavior.
+- Replaced the noisy raw development audit with a deterministic high/critical gate; moderate development-only findings are reported without being confused with runtime failures.
+- Added regression checks for the exact lint fixes and release-package completeness.
+
 ## 0.2.1
 
 - Removed the unused direct `release-it` development dependency that introduced the blocking high-severity `undici` audit path.
@@ -15,7 +22,7 @@
 - Add Apache license and SHA-256 manifest for the bundled client.
 - Add clean connected release, isolated runtime audit and tarball verification gates.
 - Mark the node as self-hosted (`n8n.strict=false`) because the optional CA-path setting reads a local file.
-- Retain 31 policy, execution, paging, retry and pool-recovery tests.
+- Retain 34 policy, execution, paging, retry and pool-recovery tests.
 
 
 ## 0.1.5 - 2026-08-03
@@ -68,5 +75,5 @@
 - SELECT paging and one read-only transport retry.
 - No retry for INSERT, UPDATE, or CREATE TABLE.
 - Process-local pooling and one-execution mode when pooling is disabled.
-- 31 automated policy/configuration/execution tests and offline type/package
+- 34 automated policy/configuration/execution tests and offline type/package
   verification.

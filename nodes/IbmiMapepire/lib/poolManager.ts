@@ -44,20 +44,23 @@ export async function createPool(config: RuntimeConfig, size: number): Promise<M
 		maxSize: size,
 		startingSize: size,
 	});
+	let initializationError: Error | undefined;
 	try {
 		await pool.init();
-		return pool;
 	} catch (error) {
+		initializationError = normalizeError(error);
+	}
+
+	if (initializationError !== undefined) {
 		try {
 			pool.end();
 		} catch {
 			// Ignore shutdown failure while preserving the initialization error.
 		}
-		const normalized = normalizeError(error);
-		throw new IbmiMapepireError(`Mapepire pool initialization failed: ${normalized.message}`, {
-			cause: normalized,
-		});
+		return Promise.reject(initializationError);
 	}
+
+	return pool;
 }
 
 async function createManagedPool(config: RuntimeConfig): Promise<ManagedPool> {

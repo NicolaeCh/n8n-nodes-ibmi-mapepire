@@ -11,7 +11,7 @@ npm run release:build
 The generated artifact is:
 
 ```text
-release/n8n-nodes-ibmi-mapepire-0.2.1.tgz
+release/n8n-nodes-ibmi-mapepire-0.2.2.tgz
 ```
 
 The tarball already contains the official Mapepire 0.6.1 runtime. Do not install
@@ -21,8 +21,8 @@ The tarball already contains the official Mapepire 0.6.1 runtime. Do not install
 
 ```bash
 podman cp \
-  release/n8n-nodes-ibmi-mapepire-0.2.1.tgz \
-  n8n:/tmp/n8n-nodes-ibmi-mapepire-0.2.1.tgz
+  release/n8n-nodes-ibmi-mapepire-0.2.2.tgz \
+  n8n:/tmp/n8n-nodes-ibmi-mapepire-0.2.2.tgz
 
 podman exec -u node n8n sh -lc '
   set -eu
@@ -30,7 +30,7 @@ podman exec -u node n8n sh -lc '
   cd /home/node/.n8n/nodes
   [ -f package.json ] || npm init -y >/dev/null
   npm uninstall n8n-nodes-ibmi-mapepire --no-audit --no-fund || true
-  npm install /tmp/n8n-nodes-ibmi-mapepire-0.2.1.tgz \
+  npm install /tmp/n8n-nodes-ibmi-mapepire-0.2.2.tgz \
     --omit=dev --no-audit --no-fund
 '
 

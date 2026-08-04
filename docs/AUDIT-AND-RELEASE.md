@@ -7,7 +7,7 @@ The reported Handlebars and Minimatch findings came from the obsolete
 findings. Reusing an old `node_modules` directory or lock file caused npm scripts
 to select that stale CLI.
 
-Version 0.2.1 pins CLI 0.41.2 and checks its installed version before lint,
+Version 0.2.2 pins CLI 0.41.2 and checks its installed version before lint,
 build, or development starts.
 
 ## Audit surfaces
@@ -65,4 +65,4 @@ Do not use `npm audit fix --force`; it may replace the pinned n8n CLI or other r
 
 ## Incomplete tarballs are rejected
 
-Running `npm pack` without a successful build used to create a metadata-only archive. Version 0.2.1 adds a `prepack` integrity guard. Packing now fails unless all compiled node files, both icons, the embedded Mapepire client, its Apache license, and its SHA-256 manifest are present and consistent.
+Running `npm pack` without a successful build used to create a metadata-only archive. Version 0.2.2 adds a `prepack` integrity guard. Packing now fails unless all compiled node files, both icons, the embedded Mapepire client, its Apache license, and its SHA-256 manifest are present and consistent.

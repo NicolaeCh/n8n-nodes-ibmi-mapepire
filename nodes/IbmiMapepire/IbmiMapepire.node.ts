@@ -55,25 +55,25 @@ export class IbmiMapepire implements INodeType {
 					{
 						name: 'Select',
 						value: 'select',
-						description: 'Run a qualified, allowlisted SELECT statement.',
+						description: 'Run a qualified, allowlisted SELECT statement',
 						action: 'Select rows from IBM i',
 					},
 					{
 						name: 'Insert',
 						value: 'insert',
-						description: 'Run INSERT INTO ... VALUES against an allowlisted library.',
+						description: 'Run INSERT INTO ... VALUES against an allowlisted library',
 						action: 'Insert rows into IBM i',
 					},
 					{
 						name: 'Update',
 						value: 'update',
-						description: 'Run an UPDATE against an allowlisted library.',
+						description: 'Run an UPDATE against an allowlisted library',
 						action: 'Update rows in IBM i',
 					},
 					{
 						name: 'Create Table',
 						value: 'createTable',
-						description: 'Create a table with explicit column definitions.',
+						description: 'Create a table with explicit column definitions',
 						action: 'Create a table in IBM i',
 					},
 				],
@@ -125,7 +125,7 @@ export class IbmiMapepire implements INodeType {
 				name: 'includeMetadata',
 				type: 'boolean',
 				default: false,
-				description: 'Whether to add SQL state/code, row counts, timing, and truncation information.',
+				description: 'Whether to add SQL state/code, row counts, timing, and truncation information',
 			},
 		],
 	};

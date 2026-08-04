@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-ibmi-mapepire",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"description": "Secure n8n community node for Db2 for IBM i using the official Mapepire Node.js client",
 	"license": "MIT",
 	"homepage": "https://github.com/NicolaeCh/n8n-nodes-ibmi-mapepire#readme",
@@ -26,7 +26,7 @@
 	},
 	"scripts": {
 		"audit:bundled-runtime": "node tools/audit-bundled-runtime.mjs",
-		"audit:toolchain": "npm audit --include=dev --omit=peer --audit-level=high",
+		"audit:toolchain": "node tools/audit-toolchain.mjs",
 		"build": "n8n-node build",
 		"build:offline": "rm -rf dist && tsc -p tsconfig.offline-build.json && mkdir -p dist/nodes/IbmiMapepire && cp nodes/IbmiMapepire/ibmi-mapepire-light.svg nodes/IbmiMapepire/ibmi-mapepire-dark.svg dist/nodes/IbmiMapepire/",
 		"build:watch": "tsc --watch",

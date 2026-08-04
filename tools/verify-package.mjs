@@ -7,6 +7,8 @@ const credentialSource = fs.readFileSync(new URL('credentials/IbmiMapepireApi.cr
 const securitySource = fs.readFileSync(new URL('nodes/IbmiMapepire/lib/security.ts', root), 'utf8');
 const nodeSource = fs.readFileSync(new URL('nodes/IbmiMapepire/IbmiMapepire.node.ts', root), 'utf8');
 const runtimeSource = fs.readFileSync(new URL('nodes/IbmiMapepire/lib/mapepireRuntime.ts', root), 'utf8');
+const poolManagerSource = fs.readFileSync(new URL('nodes/IbmiMapepire/lib/poolManager.ts', root), 'utf8');
+if (/throw new IbmiMapepireError\(`Mapepire pool initialization failed/.test(poolManagerSource)) errors.push('Pool initialization must not throw a custom error from the infrastructure helper');
 const errors = [];
 
 const eslintConfig = fs.readFileSync(new URL('eslint.config.mjs', root), 'utf8');
@@ -40,6 +42,11 @@ if (!nodeSource.includes('inputs: [NodeConnectionTypes.Main]')) errors.push('Nod
 if (!nodeSource.includes('outputs: [NodeConnectionTypes.Main]')) errors.push('Node output must use NodeConnectionTypes.Main');
 if (/\bNodeConnectionType\.Main\b/.test(nodeSource)) errors.push('Type-only NodeConnectionType used as runtime value');
 if (!nodeSource.includes('usableAsTool: false')) errors.push('Write-capable node must not be exposed as an AI tool');
+if (/description:\s*'Run a qualified, allowlisted SELECT statement\.'/m.test(nodeSource)) errors.push('SELECT option description must not end in a period');
+if (/description:\s*'Run INSERT INTO \.\.\. VALUES against an allowlisted library\.'/m.test(nodeSource)) errors.push('INSERT option description must not end in a period');
+if (/description:\s*'Run an UPDATE against an allowlisted library\.'/m.test(nodeSource)) errors.push('UPDATE option description must not end in a period');
+if (/description:\s*'Create a table with explicit column definitions\.'/m.test(nodeSource)) errors.push('CREATE TABLE option description must not end in a period');
+if (/description:\s*'Whether to add SQL state\/code, row counts, timing, and truncation information\.'/m.test(nodeSource)) errors.push('Metadata option description must not end in a period');
 if (!nodeSource.includes("testedBy: 'ibmiMapepireCredentialTest'")) errors.push('Credential test association is missing');
 if (!credentialSource.includes("displayName = 'IBM I Mapepire API'")) errors.push('Credential display name is invalid');
 if (!credentialSource.includes("light: 'file:../nodes/IbmiMapepire/ibmi-mapepire-light.svg'") || !credentialSource.includes("dark: 'file:../nodes/IbmiMapepire/ibmi-mapepire-dark.svg'")) errors.push('Credential must use distinct themed icons');

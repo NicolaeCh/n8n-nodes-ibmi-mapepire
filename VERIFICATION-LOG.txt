@@ -1,12 +1,12 @@
-n8n-nodes-ibmi-mapepire 0.2.1 verification summary
-Date: 2026-08-03
+n8n-nodes-ibmi-mapepire 0.2.2 verification summary
+Date: 2026-08-04
 
 Executed successfully in the artifact environment:
 - POSIX shell syntax validation for release scripts
 - package/source policy verifier
 - TypeScript no-emit verification
 - offline production TypeScript compilation
-- 31/31 automated tests
+- 34/34 automated tests
 - no source-level @ibm/mapepire-js import
 - relative compiled vendor load inspection
 - failed-pool cleanup and reconnect verification
