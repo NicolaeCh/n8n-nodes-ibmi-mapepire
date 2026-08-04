@@ -22,10 +22,10 @@ function toJsonObject(value: unknown): IDataObject {
 }
 
 export class IbmiMapepire implements INodeType {
+	// eslint-disable-next-line @n8n/community-nodes/node-usable-as-tool
 	description: INodeTypeDescription = {
 		displayName: 'IBM i Db2 (Mapepire)',
 		name: 'ibmiMapepire',
-		usableAsTool: true,
 		icon: {
 			light: 'file:ibmi-mapepire-light.svg',
 			dark: 'file:ibmi-mapepire-dark.svg',
