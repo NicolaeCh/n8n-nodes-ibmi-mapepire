@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.3 - 2026-08-05
+
+- Marked the host-provided `n8n-workflow` peer as optional so npm does not install a duplicate n8n dependency tree under `/home/node/.n8n/nodes`.
+- Prevented the Node.js 26/PPC64LE installation path from pulling and compiling `isolated-vm` 6.1.2.
+- Added `--omit=peer` to the self-hosted Podman installation procedure as defence in depth.
+- Added packed-artifact verification that a clean production install contains neither `n8n-workflow` nor `isolated-vm`.
+- Preserved the file-level ESLint exceptions and the removal of `usableAsTool` required by the working n8n CLI configuration.
+- Corrected the source verifier so it validates the current working source instead of the superseded `usableAsTool: false` and punctuation rules.
+
 ## 0.2.2
 
 - Fixed the four n8n option-description punctuation violations reported by `@n8n/node-cli` 0.41.2.

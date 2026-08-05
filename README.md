@@ -3,11 +3,13 @@
 A policy-controlled n8n community node for **Db2 for IBM i** using the official
 Mapepire Node.js client.
 
-Version 0.2.2 changes the packaging architecture so the published community
-package has no third-party npm runtime dependency. During the build,
-`@ibm/mapepire-js@0.6.1` is copied into `dist` together with its Apache-2.0
-license and a SHA-256 manifest. This satisfies the current n8n community-node
-package rules while retaining the official IBM client.
+Version 0.2.3 keeps the published community package free of package-owned npm
+runtime dependencies and adds a Node.js 26-safe peer-install layout. During the
+build, `@ibm/mapepire-js@0.6.1` is copied into `dist` together with its
+Apache-2.0 license and a SHA-256 manifest. `n8n-workflow` remains the host API
+peer, but it is marked optional so npm does not install a second n8n dependency
+tree inside the community-node directory. This avoids pulling `isolated-vm`
+into PPC64LE Node.js 26 installations.
 
 ## Supported operations
 
@@ -94,7 +96,9 @@ permissions, and IBM i authority now form the access boundary.
 ## Clean build and complete verification
 
 Always extract the release into a new directory. Do not reuse an old
-`node_modules` directory or lock file.
+`node_modules` directory or lock file. Run the official lint/build toolchain
+with Node.js 24; the packed JavaScript artifact is then tested separately with
+Node.js 26.5.0 before deployment.
 
 ```bash
 npm run release:build
@@ -126,8 +130,8 @@ The release command performs:
 The outputs are:
 
 ```text
-release/n8n-nodes-ibmi-mapepire-0.2.2.tgz
-release/n8n-nodes-ibmi-mapepire-0.2.2.tgz.sha256
+release/n8n-nodes-ibmi-mapepire-0.2.3.tgz
+release/n8n-nodes-ibmi-mapepire-0.2.3.tgz.sha256
 ```
 
 Do not run `npm audit fix --force`. It can replace the pinned n8n CLI or alter
@@ -140,8 +144,8 @@ Copy the built tarball:
 
 ```bash
 podman cp \
-  release/n8n-nodes-ibmi-mapepire-0.2.2.tgz \
-  n8n:/tmp/n8n-nodes-ibmi-mapepire-0.2.2.tgz
+  release/n8n-nodes-ibmi-mapepire-0.2.3.tgz \
+  n8n:/tmp/n8n-nodes-ibmi-mapepire-0.2.3.tgz
 ```
 
 Install it as the same user that runs n8n:
@@ -153,29 +157,30 @@ podman exec -u node n8n sh -lc '
   cd /home/node/.n8n/nodes
   [ -f package.json ] || npm init -y >/dev/null
   npm uninstall n8n-nodes-ibmi-mapepire --no-audit --no-fund || true
-  npm install /tmp/n8n-nodes-ibmi-mapepire-0.2.2.tgz \
-    --omit=dev --no-audit --no-fund
+  npm install /tmp/n8n-nodes-ibmi-mapepire-0.2.3.tgz \
+    --omit=dev --omit=peer --no-audit --no-fund
 '
 
 podman restart n8n
 ```
 
-No separate `@ibm/mapepire-js` installation is needed. The official client is
-already present inside the node tarball.
+No separate `@ibm/mapepire-js` or `n8n-workflow` installation is needed. The
+official Mapepire client is already present inside the node tarball, and n8n
+provides `n8n-workflow` at runtime.
 
 Verify the installed package:
 
 ```bash
 podman exec -u node n8n node -e '
 const p = require("/home/node/.n8n/nodes/node_modules/n8n-nodes-ibmi-mapepire/package.json");
-console.log(p.name, p.version, p.dependencies, p.peerDependencies);
+console.log(p.name, p.version, p.dependencies, p.peerDependencies, p.peerDependenciesMeta);
 '
 ```
 
 Expected package metadata:
 
 ```text
-n8n-nodes-ibmi-mapepire 0.2.2 undefined { n8n-workflow: '*' }
+n8n-nodes-ibmi-mapepire 0.2.3 undefined { n8n-workflow: '*' } { n8n-workflow: { optional: true } }
 ```
 
 Search for **IBM i Db2 (Mapepire)** in the editor, create an **IBM I Mapepire
@@ -211,7 +216,7 @@ Parameters:
 After `npm run release:build` succeeds and the generated lock file is committed, publish the exact verified tarball:
 
 ```bash
-npm publish release/n8n-nodes-ibmi-mapepire-0.2.2.tgz \
+npm publish release/n8n-nodes-ibmi-mapepire-0.2.3.tgz \
   --provenance --access public
 ```
 

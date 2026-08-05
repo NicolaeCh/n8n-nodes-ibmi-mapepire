@@ -7,10 +7,10 @@ import {
 	readFileSync,
 	readdirSync,
 	rmSync,
+	writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
-import { createRequire } from 'node:module';
+import { delimiter, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const tarball = process.argv[2];
@@ -29,6 +29,37 @@ try {
 	}
 	if (JSON.stringify(pkg.peerDependencies) !== JSON.stringify({ 'n8n-workflow': '*' })) {
 		throw new Error('Tarball peerDependencies are invalid');
+	}
+	if (pkg.peerDependenciesMeta?.['n8n-workflow']?.optional !== true) {
+		throw new Error('Tarball must mark n8n-workflow as an optional host peer');
+	}
+
+	const installRoot = join(directory, 'production-install');
+	mkdirSync(installRoot, { recursive: true });
+	writeFileSync(join(installRoot, 'package.json'), '{"private":true}\n');
+	const productionInstall = spawnSync(
+		'npm',
+		[
+			'install',
+			resolve(tarball),
+			'--omit=dev',
+			'--ignore-scripts',
+			'--no-audit',
+			'--no-fund',
+			'--package-lock=false',
+			'--offline',
+		],
+		{ cwd: installRoot, encoding: 'utf8' },
+	);
+	if (productionInstall.status !== 0) {
+		throw new Error(
+			`Clean production install failed:\n${productionInstall.stdout}${productionInstall.stderr}`,
+		);
+	}
+	for (const forbiddenDependency of ['n8n-workflow', 'isolated-vm']) {
+		if (containsDirectoryNamed(join(installRoot, 'node_modules'), forbiddenDependency)) {
+			throw new Error(`Production install unexpectedly contains ${forbiddenDependency}`);
+		}
 	}
 
 	const allFiles = walk(packageRoot).map((file) => file.slice(packageRoot.length + 1));
@@ -88,30 +119,42 @@ try {
 	const digest = createHash('sha256').update(vendor).digest('hex');
 	if (manifest.sha256 !== digest) throw new Error('Bundled Mapepire manifest checksum mismatch');
 
-	// Smoke-load the exact JavaScript entry points from the packed artifact.
-	const workflowDirectory = join(packageRoot, 'node_modules/n8n-workflow');
+	// Smoke-load the exact clean-installed JavaScript entry points while resolving
+	// n8n-workflow only from a host NODE_PATH. n8n initializes NODE_PATH from its
+	// own module paths before loading community packages.
+	const hostNodeModules = join(directory, 'host', 'node_modules');
+	const workflowDirectory = join(hostNodeModules, 'n8n-workflow');
 	mkdirSync(workflowDirectory, { recursive: true });
 	copyFileSync(
 		new URL('../test/fakes/n8n-workflow/index.js', import.meta.url),
 		join(workflowDirectory, 'index.js'),
 	);
-	const requireFromPackage = createRequire(join(packageRoot, 'package.json'));
-	const nodeModule = requireFromPackage(
-		'./dist/nodes/IbmiMapepire/IbmiMapepire.node.js',
+	const installedPackageRoot = join(
+		installRoot,
+		'node_modules',
+		'n8n-nodes-ibmi-mapepire',
 	);
-	const credentialModule = requireFromPackage(
-		'./dist/credentials/IbmiMapepireApi.credentials.js',
-	);
-	if (typeof nodeModule.IbmiMapepire !== 'function') {
-		throw new Error('Compiled node class could not be loaded from tarball');
+	const smokeScript = `
+		const nodeModule = require(${JSON.stringify(join(installedPackageRoot, 'dist/nodes/IbmiMapepire/IbmiMapepire.node.js'))});
+		const credentialModule = require(${JSON.stringify(join(installedPackageRoot, 'dist/credentials/IbmiMapepireApi.credentials.js'))});
+		if (typeof nodeModule.IbmiMapepire !== 'function') throw new Error('Compiled node class could not be loaded');
+		if (typeof credentialModule.IbmiMapepireApi !== 'function') throw new Error('Compiled credential class could not be loaded');
+		const node = new nodeModule.IbmiMapepire();
+		const credential = new credentialModule.IbmiMapepireApi();
+		if (node.description.name !== 'ibmiMapepire') throw new Error('Loaded node identity is invalid');
+		if (credential.name !== 'ibmiMapepireApi') throw new Error('Loaded credential identity is invalid');
+	`;
+	const smokeLoad = spawnSync(process.execPath, ['-e', smokeScript], {
+		encoding: 'utf8',
+		env: {
+			...process.env,
+			NODE_PATH: [hostNodeModules, process.env.NODE_PATH].filter(Boolean).join(delimiter),
+		},
+	});
+	if (smokeLoad.status !== 0) {
+		throw new Error(`Host-resolved runtime smoke load failed:
+${smokeLoad.stdout}${smokeLoad.stderr}`);
 	}
-	if (typeof credentialModule.IbmiMapepireApi !== 'function') {
-		throw new Error('Compiled credential class could not be loaded from tarball');
-	}
-	const node = new nodeModule.IbmiMapepire();
-	const credential = new credentialModule.IbmiMapepireApi();
-	if (node.description.name !== 'ibmiMapepire') throw new Error('Loaded node identity is invalid');
-	if (credential.name !== 'ibmiMapepireApi') throw new Error('Loaded credential identity is invalid');
 
 	console.log(
 		`Tarball verification passed (${vendor.length} bundled Mapepire bytes, ${allFiles.length} files).`,
@@ -129,4 +172,14 @@ function walk(directory) {
 		else files.push(child);
 	}
 	return files;
+}
+
+function containsDirectoryNamed(directory, targetName) {
+	if (!existsSync(directory)) return false;
+	for (const entry of readdirSync(directory, { withFileTypes: true })) {
+		if (!entry.isDirectory()) continue;
+		if (entry.name === targetName) return true;
+		if (containsDirectoryNamed(join(directory, entry.name), targetName)) return true;
+	}
+	return false;
 }

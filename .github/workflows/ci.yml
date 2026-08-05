@@ -9,17 +9,17 @@ permissions:
   contents: read
 
 jobs:
-  verify:
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [22.22.0, 24, 26]
+  build-and-pack:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          # The pinned n8n development CLI is built and linted on the supported
+          # release-toolchain version. The packed artifact is tested separately
+          # with the Node.js 26 runtime used by the target n8n container.
+          node-version: 24
+          cache: npm
       - name: Install exact development toolchain
         run: |
           if [ -f package-lock.json ]; then
@@ -27,4 +27,33 @@ jobs:
           else
             npm install --no-audit --no-fund
           fi
-      - run: npm run ci:verify
+      - name: Lint, build, test, audit, and verify
+        run: npm run ci:verify
+      - name: Pack the verified node
+        run: |
+          mkdir -p release
+          npm pack --pack-destination release
+          node tools/verify-tarball.mjs release/n8n-nodes-ibmi-mapepire-0.2.3.tgz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: n8n-nodes-ibmi-mapepire-0.2.3
+          path: release/n8n-nodes-ibmi-mapepire-0.2.3.tgz
+          if-no-files-found: error
+
+  runtime-node26:
+    needs: build-and-pack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.5.0
+      - uses: actions/download-artifact@v4
+        with:
+          name: n8n-nodes-ibmi-mapepire-0.2.3
+          path: release
+      - name: Verify clean Node.js 26 production installation
+        run: |
+          node --version
+          npm --version
+          node tools/verify-tarball.mjs release/n8n-nodes-ibmi-mapepire-0.2.3.tgz

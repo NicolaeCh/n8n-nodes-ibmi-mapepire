@@ -1,3 +1,4 @@
+# Release-toolchain container. Runtime compatibility is verified separately on Node.js 26.
 ARG NODE_IMAGE=node:24-bookworm-slim
 FROM ${NODE_IMAGE}
 

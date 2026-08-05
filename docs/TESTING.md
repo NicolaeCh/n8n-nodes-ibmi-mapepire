@@ -9,9 +9,17 @@ npm run release:build
 Use `RESET_LOCKFILE=1` only when intentionally regenerating the dependency lock.
 The command otherwise preserves and uses `package-lock.json` through `npm ci`.
 
+
+## Build/runtime version split
+
+Run the official n8n lint/build toolchain with Node.js 24. The CI workflow then
+installs and smoke-loads the exact packed tarball with Node.js 26.5.0. The
+Node.js 26 job does not install development dependencies and fails if the clean
+production installation contains `n8n-workflow` or `isolated-vm`.
+
 ## Automated coverage
 
-The suite contains 31 tests covering:
+The suite contains 34 tests covering:
 
 - credential/environment mapping and JDBC options
 - inline CA versus CA-path conflict

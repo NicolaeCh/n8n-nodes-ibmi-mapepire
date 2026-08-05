@@ -11,18 +11,20 @@ npm run release:build
 The generated artifact is:
 
 ```text
-release/n8n-nodes-ibmi-mapepire-0.2.2.tgz
+release/n8n-nodes-ibmi-mapepire-0.2.3.tgz
 ```
 
 The tarball already contains the official Mapepire 0.6.1 runtime. Do not install
-`@ibm/mapepire-js` separately in n8n.
+`@ibm/mapepire-js` separately in n8n. The `n8n-workflow` peer is host-provided
+and optional in package metadata, so npm must not create a second n8n runtime
+tree in `/home/node/.n8n/nodes`.
 
 ## Install in a Podman n8n container
 
 ```bash
 podman cp \
-  release/n8n-nodes-ibmi-mapepire-0.2.2.tgz \
-  n8n:/tmp/n8n-nodes-ibmi-mapepire-0.2.2.tgz
+  release/n8n-nodes-ibmi-mapepire-0.2.3.tgz \
+  n8n:/tmp/n8n-nodes-ibmi-mapepire-0.2.3.tgz
 
 podman exec -u node n8n sh -lc '
   set -eu
@@ -30,8 +32,8 @@ podman exec -u node n8n sh -lc '
   cd /home/node/.n8n/nodes
   [ -f package.json ] || npm init -y >/dev/null
   npm uninstall n8n-nodes-ibmi-mapepire --no-audit --no-fund || true
-  npm install /tmp/n8n-nodes-ibmi-mapepire-0.2.2.tgz \
-    --omit=dev --no-audit --no-fund
+  npm install /tmp/n8n-nodes-ibmi-mapepire-0.2.3.tgz \
+    --omit=dev --omit=peer --no-audit --no-fund
 '
 
 podman restart n8n
@@ -85,3 +87,32 @@ podman exec -u node n8n sh -lc '
 '
 podman restart n8n
 ```
+
+
+## Node.js 26 / PPC64LE note
+
+Use both `--omit=dev` and `--omit=peer`. Version 0.2.3 also marks the
+`n8n-workflow` peer as optional, so a normal npm install does not pull
+`n8n-workflow`, `n8n-core`, or `isolated-vm` into the community-node directory.
+The node package itself contains only JavaScript, SVG, JSON, and the bundled
+Mapepire JavaScript client; it has no native addon to rebuild for Node.js
+26.
+
+If the previous 0.2.2 install failed while compiling `isolated-vm`, remove the
+failed package and prune only dependencies that are no longer referenced by
+`/home/node/.n8n/nodes/package.json`. This avoids deleting dependencies required
+by other installed community nodes:
+
+```bash
+podman exec -u node n8n sh -lc '
+  set -eu
+  cd /home/node/.n8n/nodes
+  npm uninstall n8n-nodes-ibmi-mapepire --no-audit --no-fund || true
+  npm prune --omit=dev --omit=peer --no-audit --no-fund || true
+  npm install /tmp/n8n-nodes-ibmi-mapepire-0.2.3.tgz \
+    --omit=dev --omit=peer --no-audit --no-fund
+'
+```
+
+Do not manually remove a shared `n8n-workflow` or `isolated-vm` directory unless
+`npm ls --all` confirms that no other installed community package references it.

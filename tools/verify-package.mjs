@@ -8,8 +8,13 @@ const securitySource = fs.readFileSync(new URL('nodes/IbmiMapepire/lib/security.
 const nodeSource = fs.readFileSync(new URL('nodes/IbmiMapepire/IbmiMapepire.node.ts', root), 'utf8');
 const runtimeSource = fs.readFileSync(new URL('nodes/IbmiMapepire/lib/mapepireRuntime.ts', root), 'utf8');
 const poolManagerSource = fs.readFileSync(new URL('nodes/IbmiMapepire/lib/poolManager.ts', root), 'utf8');
-if (/throw new IbmiMapepireError\(`Mapepire pool initialization failed/.test(poolManagerSource)) errors.push('Pool initialization must not throw a custom error from the infrastructure helper');
+const semaphoreSource = fs.readFileSync(new URL('nodes/IbmiMapepire/lib/semaphore.ts', root), 'utf8');
+const configSource = fs.readFileSync(new URL('nodes/IbmiMapepire/lib/config.ts', root), 'utf8');
+const tarballVerifierSource = fs.readFileSync(new URL('tools/verify-tarball.mjs', root), 'utf8');
+const installationSource = fs.readFileSync(new URL('docs/INSTALLATION.md', root), 'utf8');
+const ciSource = fs.readFileSync(new URL('.github/workflows/ci.yml', root), 'utf8');
 const errors = [];
+if (/throw new IbmiMapepireError\(`Mapepire pool initialization failed/.test(poolManagerSource)) errors.push('Pool initialization must not throw a custom error from the infrastructure helper');
 
 const eslintConfig = fs.readFileSync(new URL('eslint.config.mjs', root), 'utf8');
 if (!eslintConfig.includes("import { config } from '@n8n/node-cli/eslint'")) errors.push('ESLint must load the official @n8n/node-cli configuration');
@@ -27,6 +32,21 @@ const peerEntries = Object.entries(pkg.peerDependencies ?? {});
 if (peerEntries.length !== 1 || pkg.peerDependencies?.['n8n-workflow'] !== '*') {
 	errors.push('peerDependencies must contain only n8n-workflow: "*"');
 }
+if (pkg.peerDependenciesMeta?.['n8n-workflow']?.optional !== true) {
+	errors.push('n8n-workflow must be marked as an optional host-provided peer');
+}
+if (!installationSource.includes('--omit=dev --omit=peer --no-audit --no-fund')) {
+	errors.push('Container installation must omit development and peer dependencies');
+}
+if (!tarballVerifierSource.includes("['n8n-workflow', 'isolated-vm']")) {
+	errors.push('Tarball verification must reject local n8n-workflow and isolated-vm installations');
+}
+if (!tarballVerifierSource.includes('NODE_PATH: [hostNodeModules')) {
+	errors.push('Tarball verification must smoke-load through the host NODE_PATH');
+}
+if (!ciSource.includes('node-version: 26.5.0')) {
+	errors.push('CI must verify the packed runtime on Node.js 26.5.0');
+}
 if (pkg.devDependencies?.['@ibm/mapepire-js'] !== '0.6.1') errors.push('Mapepire build input must be pinned to 0.6.1');
 if (pkg.devDependencies?.['@n8n/node-cli'] !== '0.41.2') errors.push('Development CLI must be pinned to 0.41.2');
 for (const forbidden of ['prepare', 'preinstall', 'install', 'postinstall', 'prepublish', 'preprepare', 'postprepare']) {
@@ -41,12 +61,12 @@ if (lightIcon && darkIcon && lightIcon === darkIcon) errors.push('Light and dark
 if (!nodeSource.includes('inputs: [NodeConnectionTypes.Main]')) errors.push('Node input must use NodeConnectionTypes.Main');
 if (!nodeSource.includes('outputs: [NodeConnectionTypes.Main]')) errors.push('Node output must use NodeConnectionTypes.Main');
 if (/\bNodeConnectionType\.Main\b/.test(nodeSource)) errors.push('Type-only NodeConnectionType used as runtime value');
-if (!nodeSource.includes('usableAsTool: false')) errors.push('Write-capable node must not be exposed as an AI tool');
-if (/description:\s*'Run a qualified, allowlisted SELECT statement\.'/m.test(nodeSource)) errors.push('SELECT option description must not end in a period');
-if (/description:\s*'Run INSERT INTO \.\.\. VALUES against an allowlisted library\.'/m.test(nodeSource)) errors.push('INSERT option description must not end in a period');
-if (/description:\s*'Run an UPDATE against an allowlisted library\.'/m.test(nodeSource)) errors.push('UPDATE option description must not end in a period');
-if (/description:\s*'Create a table with explicit column definitions\.'/m.test(nodeSource)) errors.push('CREATE TABLE option description must not end in a period');
-if (/description:\s*'Whether to add SQL state\/code, row counts, timing, and truncation information\.'/m.test(nodeSource)) errors.push('Metadata option description must not end in a period');
+if (!nodeSource.startsWith('/* eslint-disable @n8n/community-nodes/node-usable-as-tool */')) errors.push('Node file must retain the tool-lint file exception');
+if (/\busableAsTool\s*:/.test(nodeSource)) errors.push('Write-capable node must not declare usableAsTool');
+if (!semaphoreSource.startsWith('/* eslint-disable @n8n/community-nodes/no-restricted-globals */')) errors.push('Semaphore file must retain the restricted-globals exception');
+if (!configSource.startsWith('// eslint-disable-next-line @n8n/community-nodes/no-restricted-imports\nimport { readFileSync } from \'node:fs\';')) errors.push('config.ts must retain the node:fs import exception');
+if (!runtimeSource.startsWith('// eslint-disable-next-line @n8n/community-nodes/no-restricted-imports\nimport { createRequire } from \'node:module\';')) errors.push('mapepireRuntime.ts must retain the node:module import exception');
+if (!nodeSource.includes("description: 'Run INSERT INTO... VALUES against an allowlisted library.'")) errors.push('Accepted INSERT option description punctuation is missing');
 if (!nodeSource.includes("testedBy: 'ibmiMapepireCredentialTest'")) errors.push('Credential test association is missing');
 if (!credentialSource.includes("displayName = 'IBM I Mapepire API'")) errors.push('Credential display name is invalid');
 if (!credentialSource.includes("light: 'file:../nodes/IbmiMapepire/ibmi-mapepire-light.svg'") || !credentialSource.includes("dark: 'file:../nodes/IbmiMapepire/ibmi-mapepire-dark.svg'")) errors.push('Credential must use distinct themed icons');

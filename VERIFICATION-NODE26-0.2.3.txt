@@ -1,0 +1,57 @@
+n8n-nodes-ibmi-mapepire 0.2.3 — Node.js 26 adaptation verification
+===================================================================
+Date: 2026-08-05
+
+Problem reproduced from the supplied deployment log
+---------------------------------------------------
+The 0.2.2 tarball installation caused npm to install an n8n peer/dependency
+subtree inside /home/node/.n8n/nodes. That subtree included isolated-vm 6.1.2.
+Its direct V8 C++ API calls did not compile with Node.js 26.5.0 on PPC64LE.
+The IBM i Mapepire node itself did not contain or invoke isolated-vm.
+
+Corrections in 0.2.3
+--------------------
+- Kept n8n-workflow as the package's sole peer dependency.
+- Marked n8n-workflow as an optional host-provided peer through
+  peerDependenciesMeta, preventing npm from auto-installing a second n8n tree.
+- Added --omit=peer to the documented container installation command.
+- Updated package audit commands to omit the host-provided peer.
+- Added a clean tarball installation gate that rejects local n8n-workflow or
+  isolated-vm directories.
+- Added a host-resolution smoke test: the installed package must load
+  n8n-workflow from NODE_PATH, matching n8n's host module resolution model.
+- Added a GitHub CI job that runs the exact packed artifact with Node.js 26.5.0.
+- Kept the official n8n lint/build toolchain on Node.js 24.
+- Preserved all user-specified ESLint exceptions, removal of usableAsTool, and
+  the accepted period on the INSERT option description.
+
+Verification completed in this artifact environment
+---------------------------------------------------
+- 34/34 automated tests passed.
+- TypeScript no-emit verification passed.
+- Offline production TypeScript compilation passed.
+- Source/package policy verification passed.
+- JavaScript and workflow YAML syntax checks passed.
+- A synthetic package-pipeline test passed, including clean production install,
+  rejection of local n8n-workflow/isolated-vm, vendor manifest validation, and
+  compiled node/credential smoke loading through host NODE_PATH.
+
+Connected checks still required
+-------------------------------
+This environment could not fetch the authentic @ibm/mapepire-js 0.6.1 package
+from the configured npm registry and could not execute Node.js 26.5.0 directly.
+Therefore this ZIP is a verified source package, not a prebuilt installable npm
+tarball. On a connected Node.js 24 build host run:
+
+  RESET_LOCKFILE=1 npm run release:build
+
+The command must create:
+
+  release/n8n-nodes-ibmi-mapepire-0.2.3.tgz
+  release/n8n-nodes-ibmi-mapepire-0.2.3.tgz.sha256
+
+GitHub CI then validates the exact tarball under Node.js 26.5.0. Install it in
+the target n8n container with:
+
+  npm install /tmp/n8n-nodes-ibmi-mapepire-0.2.3.tgz \
+    --omit=dev --omit=peer --no-audit --no-fund
