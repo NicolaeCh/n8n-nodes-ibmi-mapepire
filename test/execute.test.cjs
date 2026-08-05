@@ -94,6 +94,21 @@ test('SELECT configures Mapepire Pool, pages rows, truncates, and closes the cur
   await invalidateManagedPool(cfg);
 });
 
+
+
+test('successful SELECT accepts Mapepire responses that omit SQLCODE and SQLSTATE', async () => {
+  const successfulPage = page([{ ID: 1 }], true);
+  delete successfulPage.sql_rc;
+  delete successfulPage.sql_state;
+  reset([{ query: { firstPage: successfulPage } }]);
+  const cfg = config();
+  const result = await executeSelect(node, cfg, 'SELECT ID FROM APPDATA.T', []);
+  assert.deepEqual(result.rows, [{ ID: 1 }]);
+  assert.equal(result.sqlCode, 0);
+  assert.equal(result.sqlState, '');
+  await invalidateManagedPool(cfg);
+});
+
 test('SELECT retries exactly once after a transport failure and recreates the pool', async () => {
   reset([
     { query: { executeError: new Error('ECONNRESET websocket closed') } },

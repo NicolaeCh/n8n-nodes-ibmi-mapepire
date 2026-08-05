@@ -12,11 +12,14 @@ import type {
 
 function assertMapepireSuccess(
 	node: INode,
-	result: { success: boolean; error?: string; sql_rc: number; sql_state: string },
+	result: { success?: boolean; error?: string; sql_rc?: number; sql_state?: string },
 	context: string,
 ): void {
-	if (result.success !== false && result.sql_rc >= 0) return;
-	const detail = result.error?.trim() || `SQLCODE ${result.sql_rc}, SQLSTATE ${result.sql_state}`;
+	const hasNegativeSqlCode = typeof result.sql_rc === 'number' && result.sql_rc < 0;
+	if (result.success !== false && !hasNegativeSqlCode) return;
+	const sqlCode = result.sql_rc ?? 'not supplied';
+	const sqlState = result.sql_state?.trim() || 'not supplied';
+	const detail = result.error?.trim() || `SQLCODE ${sqlCode}, SQLSTATE ${sqlState}`;
 	throw new NodeOperationError(node, `${context} failed: ${detail}`);
 }
 
@@ -43,8 +46,8 @@ async function executeSelectOnce(
 			);
 			assertMapepireSuccess(node, page, 'SELECT');
 			metadata = page.metadata;
-			sqlState = page.sql_state;
-			sqlCode = page.sql_rc;
+			sqlState = page.sql_state ?? '';
+			sqlCode = page.sql_rc ?? 0;
 			executionTimeMs += page.execution_time ?? 0;
 
 			while (true) {
@@ -63,8 +66,8 @@ async function executeSelectOnce(
 					Math.min(config.credentials.pageSize, config.credentials.maxRows - rows.length),
 				);
 				assertMapepireSuccess(node, page, 'SELECT fetch');
-				sqlState = page.sql_state;
-				sqlCode = page.sql_rc;
+				sqlState = page.sql_state ?? '';
+				sqlCode = page.sql_rc ?? 0;
 				executionTimeMs += page.execution_time ?? 0;
 			}
 		} catch (error) {
@@ -132,8 +135,8 @@ export async function executeWrite(
 		assertMapepireSuccess(node, result, 'Write');
 		return {
 			updateCount: result.update_count ?? 0,
-			sqlState: result.sql_state,
-			sqlCode: result.sql_rc,
+			sqlState: result.sql_state ?? '',
+			sqlCode: result.sql_rc ?? 0,
 			executionTimeMs: result.execution_time ?? 0,
 			metadata: result.metadata,
 		};

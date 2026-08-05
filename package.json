@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-ibmi-mapepire",
-	"version": "0.2.3",
+	"version": "0.2.4",
 	"description": "Secure n8n community node for Db2 for IBM i using the official Mapepire Node.js client",
 	"license": "MIT",
 	"homepage": "https://github.com/NicolaeCh/n8n-nodes-ibmi-mapepire#readme",

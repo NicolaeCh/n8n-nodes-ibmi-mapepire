@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.4 - 2026-08-05
+
+### Fixed
+
+- Accept successful Mapepire query responses where `sql_rc` and `sql_state` are omitted.
+- Treat a result as failed only when `success === false` or a numeric SQL return code is negative.
+- Normalize omitted successful SQL diagnostics to SQL code `0` and an empty SQL state in n8n metadata.
+- Add a regression test for the production response shape that previously produced `SQLCODE undefined, SQLSTATE undefined`.
+
+
 ## 0.2.3 - 2026-08-05
 
 - Marked the host-provided `n8n-workflow` peer as optional so npm does not install a duplicate n8n dependency tree under `/home/node/.n8n/nodes`.

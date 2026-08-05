@@ -146,10 +146,10 @@ export class IbmiMapepire implements INodeType {
 					const result = await pool.execute<IDataObject>(
 						'SELECT CURRENT_SERVER AS SERVER_NAME FROM SYSIBM.SYSDUMMY1',
 					);
-					if (result.success === false || result.sql_rc < 0) {
+					if (result.success === false || (typeof result.sql_rc === 'number' && result.sql_rc < 0)) {
 						const detail =
 							result.error?.trim() ||
-							`SQLCODE ${result.sql_rc}, SQLSTATE ${result.sql_state}`;
+							`SQLCODE ${result.sql_rc ?? 'not supplied'}, SQLSTATE ${result.sql_state ?? 'not supplied'}`;
 						return { status: 'Error', message: `Connection test failed: ${detail}` };
 					}
 					return { status: 'OK', message: 'Connection successful.' };

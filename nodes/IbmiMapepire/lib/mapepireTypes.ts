@@ -26,10 +26,10 @@ export interface QueryMetaData {
 }
 
 export interface QueryResult<T> {
-	success: boolean;
+	success?: boolean;
 	error?: string;
-	sql_rc: number;
-	sql_state: string;
+	sql_rc?: number;
+	sql_state?: string;
 	execution_time?: number;
 	metadata?: QueryMetaData;
 	is_done: boolean;
