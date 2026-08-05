@@ -24,6 +24,12 @@ try {
 
 	const packageRoot = join(directory, 'package');
 	const pkg = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
+	if (pkg.name !== '@nicolaech/n8n-nodes-ibmi-db2-mapepire') {
+		throw new Error(`Unexpected npm package identity: ${pkg.name}`);
+	}
+	if (pkg.publishConfig?.access !== 'public') {
+		throw new Error('Scoped package must declare public npm access');
+	}
 	if (pkg.dependencies && Object.keys(pkg.dependencies).length) {
 		throw new Error('Tarball declares runtime dependencies');
 	}
@@ -132,7 +138,7 @@ try {
 	const installedPackageRoot = join(
 		installRoot,
 		'node_modules',
-		'n8n-nodes-ibmi-mapepire',
+		...pkg.name.split('/'),
 	);
 	const smokeScript = `
 		const nodeModule = require(${JSON.stringify(join(installedPackageRoot, 'dist/nodes/IbmiMapepire/IbmiMapepire.node.js'))});

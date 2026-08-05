@@ -2,6 +2,12 @@
 
 ## 0.2.4 - 2026-08-05
 
+### Package identity
+
+- Publish independently as `@nicolaech/n8n-nodes-ibmi-db2-mapepire`.
+- Use a distinct package basename to avoid ownership and n8n loader collisions with unrelated packages.
+- Add public scoped-package metadata, dynamic tarball naming, and scoped CI/publishing verification.
+
 ### Fixed
 
 - Accept successful Mapepire query responses where `sql_rc` and `sql_state` are omitted.

@@ -19,7 +19,7 @@
       },
       "id": "ibmi-select",
       "name": "IBM i Select",
-      "type": "n8n-nodes-ibmi-mapepire.ibmiMapepire",
+      "type": "@nicolaech/n8n-nodes-ibmi-db2-mapepire.ibmiMapepire",
       "typeVersion": 1,
       "position": [520, 300],
       "credentials": {

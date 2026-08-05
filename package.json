@@ -1,5 +1,5 @@
 {
-	"name": "n8n-nodes-ibmi-mapepire",
+	"name": "@nicolaech/n8n-nodes-ibmi-db2-mapepire",
 	"version": "0.2.4",
 	"description": "Secure n8n community node for Db2 for IBM i using the official Mapepire Node.js client",
 	"license": "MIT",
@@ -88,5 +88,9 @@
 		"n8n-workflow": {
 			"optional": true
 		}
+	},
+	"publishConfig": {
+		"access": "public",
+		"registry": "https://registry.npmjs.org/"
 	}
 }

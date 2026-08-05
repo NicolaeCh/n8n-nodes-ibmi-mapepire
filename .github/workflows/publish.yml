@@ -20,5 +20,7 @@ jobs:
           registry-url: https://registry.npmjs.org
       - name: Build and verify exact npm artifact
         run: npm run release:build
-      - name: Publish verified artifact
-        run: npm publish release/n8n-nodes-ibmi-mapepire-*.tgz --provenance --access public
+      - name: Publish independent scoped package
+        run: |
+          TARBALL="$(node tools/package-artifact-name.mjs release)"
+          npm publish "$TARBALL" --provenance --access public

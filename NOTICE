@@ -1,4 +1,4 @@
-n8n-nodes-ibmi-mapepire
+@nicolaech/n8n-nodes-ibmi-db2-mapepire
 Copyright 2026 Nicolae Chirea
 
 This project embeds the official @ibm/mapepire-js version 0.6.1 build artifact

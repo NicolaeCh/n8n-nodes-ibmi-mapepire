@@ -2,8 +2,7 @@
 set -eu
 
 expected_cli="$(node -p 'require("./package.json").devDependencies["@n8n/node-cli"]')"
-version="$(node -p 'require("./package.json").version')"
-tarball="release/n8n-nodes-ibmi-mapepire-${version}.tgz"
+tarball="$(node tools/package-artifact-name.mjs release)"
 
 cleanup_failed_release() {
 	status=$?

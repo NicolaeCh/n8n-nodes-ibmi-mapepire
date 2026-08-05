@@ -1,9 +1,14 @@
-# n8n-nodes-ibmi-mapepire
+# @nicolaech/n8n-nodes-ibmi-db2-mapepire
 
 A policy-controlled n8n community node for **Db2 for IBM i** using the official
 Mapepire Node.js client.
 
-Version 0.2.3 keeps the published community package free of package-owned npm
+This is an independent Mapepire-based implementation maintained under the npm
+scope `@nicolaech`. It is not a fork, continuation, or distribution of any
+ODBC-based n8n package. The distinct basename `n8n-nodes-ibmi-db2-mapepire`
+avoids npm ownership conflicts and gives the implementation a distinct n8n package identity.
+
+Version 0.2.4 keeps the published community package free of package-owned npm
 runtime dependencies and adds a Node.js 26-safe peer-install layout. During the
 build, `@ibm/mapepire-js@0.6.1` is copied into `dist` together with its
 Apache-2.0 license and a SHA-256 manifest. `n8n-workflow` remains the host API
@@ -121,7 +126,7 @@ The release command performs:
 3. isolated audit of `@ibm/mapepire-js@0.6.1`
 4. official `n8n-node lint`
 5. official `n8n-node build`
-6. 34 automated policy and execution tests
+6. 35 automated policy and execution tests
 7. TypeScript verification
 8. built-package policy and vendor-manifest verification
 9. production-package audit excluding the host-provided peer
@@ -130,8 +135,8 @@ The release command performs:
 The outputs are:
 
 ```text
-release/n8n-nodes-ibmi-mapepire-0.2.3.tgz
-release/n8n-nodes-ibmi-mapepire-0.2.3.tgz.sha256
+release/nicolaech-n8n-nodes-ibmi-db2-mapepire-0.2.4.tgz
+release/nicolaech-n8n-nodes-ibmi-db2-mapepire-0.2.4.tgz.sha256
 ```
 
 Do not run `npm audit fix --force`. It can replace the pinned n8n CLI or alter
@@ -144,8 +149,8 @@ Copy the built tarball:
 
 ```bash
 podman cp \
-  release/n8n-nodes-ibmi-mapepire-0.2.3.tgz \
-  n8n:/tmp/n8n-nodes-ibmi-mapepire-0.2.3.tgz
+  release/nicolaech-n8n-nodes-ibmi-db2-mapepire-0.2.4.tgz \
+  n8n:/tmp/nicolaech-n8n-nodes-ibmi-db2-mapepire-0.2.4.tgz
 ```
 
 Install it as the same user that runs n8n:
@@ -156,8 +161,8 @@ podman exec -u node n8n sh -lc '
   mkdir -p /home/node/.n8n/nodes
   cd /home/node/.n8n/nodes
   [ -f package.json ] || npm init -y >/dev/null
-  npm uninstall n8n-nodes-ibmi-mapepire --no-audit --no-fund || true
-  npm install /tmp/n8n-nodes-ibmi-mapepire-0.2.3.tgz \
+  npm uninstall @nicolaech/n8n-nodes-ibmi-db2-mapepire --no-audit --no-fund || true
+  npm install /tmp/nicolaech-n8n-nodes-ibmi-db2-mapepire-0.2.4.tgz \
     --omit=dev --omit=peer --no-audit --no-fund
 '
 
@@ -172,7 +177,7 @@ Verify the installed package:
 
 ```bash
 podman exec -u node n8n node -e '
-const p = require("/home/node/.n8n/nodes/node_modules/n8n-nodes-ibmi-mapepire/package.json");
+const p = require("/home/node/.n8n/nodes/node_modules/@nicolaech/n8n-nodes-ibmi-db2-mapepire/package.json");
 console.log(p.name, p.version, p.dependencies, p.peerDependencies, p.peerDependenciesMeta);
 '
 ```
@@ -180,7 +185,7 @@ console.log(p.name, p.version, p.dependencies, p.peerDependencies, p.peerDepende
 Expected package metadata:
 
 ```text
-n8n-nodes-ibmi-mapepire 0.2.3 undefined { n8n-workflow: '*' } { n8n-workflow: { optional: true } }
+@nicolaech/n8n-nodes-ibmi-db2-mapepire 0.2.4 undefined { n8n-workflow: '*' } { n8n-workflow: { optional: true } }
 ```
 
 Search for **IBM i Db2 (Mapepire)** in the editor, create an **IBM I Mapepire
@@ -216,17 +221,22 @@ Parameters:
 After `npm run release:build` succeeds and the generated lock file is committed, publish the exact verified tarball:
 
 ```bash
-npm publish release/n8n-nodes-ibmi-mapepire-0.2.3.tgz \
+npm publish release/nicolaech-n8n-nodes-ibmi-db2-mapepire-0.2.4.tgz \
   --provenance --access public
 ```
 
 The package can then be installed from **Settings → Community Nodes** using:
 
 ```text
-n8n-nodes-ibmi-mapepire
+@nicolaech/n8n-nodes-ibmi-db2-mapepire
 ```
 
 See `docs/PUBLISHING.md` for GitHub Actions and npm trusted publishing.
+
+Workflows created with the earlier local unscoped package must change the node
+type from `n8n-nodes-ibmi-mapepire.ibmiMapepire` to
+`@nicolaech/n8n-nodes-ibmi-db2-mapepire.ibmiMapepire`; see
+`docs/PACKAGE-IDENTITY.md`.
 
 ## Verification scope
 

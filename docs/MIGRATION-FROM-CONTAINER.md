@@ -1,7 +1,7 @@
 # Migration from `ibmi-n8n-sql-container`
 
 1. Keep the Mapepire server and dedicated IBM i profile.
-2. Install `n8n-nodes-ibmi-mapepire` in self-hosted n8n.
+2. Install `@nicolaech/n8n-nodes-ibmi-db2-mapepire` in self-hosted n8n.
 3. Create an **IBM i Mapepire** credential.
 4. Copy the former `.env` values using `VARIABLE-MAPPING.md`.
 5. Replace each HTTP Request node:

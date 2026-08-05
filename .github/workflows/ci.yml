@@ -15,9 +15,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          # The pinned n8n development CLI is built and linted on the supported
-          # release-toolchain version. The packed artifact is tested separately
-          # with the Node.js 26 runtime used by the target n8n container.
+          # Build and lint with the supported n8n development toolchain.
+          # The exact packed artifact is tested separately on Node.js 26.5.0.
           node-version: 24
           cache: npm
       - name: Install exact development toolchain
@@ -29,15 +28,16 @@ jobs:
           fi
       - name: Lint, build, test, audit, and verify
         run: npm run ci:verify
-      - name: Pack the verified node
+      - name: Pack the verified scoped node
         run: |
           mkdir -p release
           npm pack --pack-destination release
-          node tools/verify-tarball.mjs release/n8n-nodes-ibmi-mapepire-0.2.3.tgz
+          TARBALL="$(node tools/package-artifact-name.mjs release)"
+          node tools/verify-tarball.mjs "$TARBALL"
       - uses: actions/upload-artifact@v4
         with:
-          name: n8n-nodes-ibmi-mapepire-0.2.3
-          path: release/n8n-nodes-ibmi-mapepire-0.2.3.tgz
+          name: ibmi-db2-mapepire-package
+          path: release/*.tgz
           if-no-files-found: error
 
   runtime-node26:
@@ -50,10 +50,11 @@ jobs:
           node-version: 26.5.0
       - uses: actions/download-artifact@v4
         with:
-          name: n8n-nodes-ibmi-mapepire-0.2.3
+          name: ibmi-db2-mapepire-package
           path: release
       - name: Verify clean Node.js 26 production installation
         run: |
           node --version
           npm --version
-          node tools/verify-tarball.mjs release/n8n-nodes-ibmi-mapepire-0.2.3.tgz
+          TARBALL="$(node tools/package-artifact-name.mjs release)"
+          node tools/verify-tarball.mjs "$TARBALL"

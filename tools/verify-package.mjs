@@ -12,6 +12,10 @@ const semaphoreSource = fs.readFileSync(new URL('nodes/IbmiMapepire/lib/semaphor
 const configSource = fs.readFileSync(new URL('nodes/IbmiMapepire/lib/config.ts', root), 'utf8');
 const tarballVerifierSource = fs.readFileSync(new URL('tools/verify-tarball.mjs', root), 'utf8');
 const installationSource = fs.readFileSync(new URL('docs/INSTALLATION.md', root), 'utf8');
+const readmeSource = fs.readFileSync(new URL('README.md', root), 'utf8');
+const publishingSource = fs.readFileSync(new URL('docs/PUBLISHING.md', root), 'utf8');
+const exampleWorkflowSource = fs.readFileSync(new URL('examples/workflow-select.json', root), 'utf8');
+const artifactNameSource = fs.readFileSync(new URL('tools/package-artifact-name.mjs', root), 'utf8');
 const ciSource = fs.readFileSync(new URL('.github/workflows/ci.yml', root), 'utf8');
 const errors = [];
 if (/throw new IbmiMapepireError\(`Mapepire pool initialization failed/.test(poolManagerSource)) errors.push('Pool initialization must not throw a custom error from the infrastructure helper');
@@ -19,7 +23,9 @@ if (/throw new IbmiMapepireError\(`Mapepire pool initialization failed/.test(poo
 const eslintConfig = fs.readFileSync(new URL('eslint.config.mjs', root), 'utf8');
 if (!eslintConfig.includes("import { config } from '@n8n/node-cli/eslint'")) errors.push('ESLint must load the official @n8n/node-cli configuration');
 if (!eslintConfig.includes('...config')) errors.push('ESLint must extend the official n8n configuration');
-if (!pkg.name.startsWith('n8n-nodes-')) errors.push('Package name must start with n8n-nodes-');
+if (pkg.name !== '@nicolaech/n8n-nodes-ibmi-db2-mapepire') errors.push('Package name must be the independent scoped npm identity @nicolaech/n8n-nodes-ibmi-db2-mapepire');
+if (pkg.publishConfig?.access !== 'public') errors.push('Scoped npm package must publish with public access');
+if (pkg.publishConfig?.registry !== 'https://registry.npmjs.org/') errors.push('Scoped npm package must publish to the public npm registry');
 if (!pkg.keywords?.includes('n8n-community-node-package')) errors.push('Missing n8n community keyword');
 if (pkg.license !== 'MIT') errors.push('Community package must use MIT license');
 if (pkg.n8n?.strict !== false) errors.push('This filesystem-capable self-hosted node must explicitly set n8n.strict=false');
@@ -37,6 +43,20 @@ if (pkg.peerDependenciesMeta?.['n8n-workflow']?.optional !== true) {
 }
 if (!installationSource.includes('--omit=dev --omit=peer --no-audit --no-fund')) {
 	errors.push('Container installation must omit development and peer dependencies');
+}
+for (const [name, source] of [['README', readmeSource], ['installation guide', installationSource], ['publishing guide', publishingSource]]) {
+	if (!source.includes('@nicolaech/n8n-nodes-ibmi-db2-mapepire')) {
+		errors.push(`${name} must use the independent scoped package name`);
+	}
+}
+if (publishingSource.includes('npm publish release/n8n-nodes-ibmi-mapepire')) {
+	errors.push('Publishing guide must not publish the unrelated unscoped package name');
+}
+if (!exampleWorkflowSource.includes('\"type\": \"@nicolaech/n8n-nodes-ibmi-db2-mapepire.ibmiMapepire\"')) {
+	errors.push('Example workflow must use the fully scoped n8n node type');
+}
+if (!artifactNameSource.includes("replace(/^@/, '').replaceAll('/', '-')")) {
+	errors.push('Release artifact naming must support scoped npm package names');
 }
 if (!tarballVerifierSource.includes("['n8n-workflow', 'isolated-vm']")) {
 	errors.push('Tarball verification must reject local n8n-workflow and isolated-vm installations');

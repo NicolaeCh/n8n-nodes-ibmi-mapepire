@@ -13,8 +13,8 @@ RESET_LOCKFILE=1 npm run release:build
 A successful run creates:
 
 ```text
-release/n8n-nodes-ibmi-mapepire-0.2.1.tgz
-release/n8n-nodes-ibmi-mapepire-0.2.1.tgz.sha256
+release/nicolaech-n8n-nodes-ibmi-db2-mapepire-0.2.1.tgz
+release/nicolaech-n8n-nodes-ibmi-db2-mapepire-0.2.1.tgz.sha256
 ```
 
 Warnings marked `deprecated` do not by themselves fail npm installation. The release does fail on high/critical development advisories, high/critical Mapepire runtime advisories, lint/build/test/type/package verification failures, or an incomplete tarball.
